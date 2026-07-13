@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+
+  # ── PostgreSQL Database ──────────────────────────────────────────────────
+  # Disabled in production since we connect directly to AWS RDS.
+  db:
+    profiles:
+      - local_db_disabled
+    scale: 0
+
+  # ── Flask Backend ──────────────────────────────────────────────────────
+  backend:
+    environment:
+      - FLASK_ENV=production
+      # Read DATABASE_URL from .env pointing to the AWS RDS instance
+      - DATABASE_URL=${DATABASE_URL}
+    # Clear health check dependency on local db container
+    depends_on: []
+
+  # ── Streamlit Frontend ─────────────────────────────────────────────────
+  frontend:
+    depends_on:
+      backend:
+        condition: service_healthy

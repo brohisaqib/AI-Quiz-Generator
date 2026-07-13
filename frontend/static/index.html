@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>AI Quiz Genius</title>
+    <!-- Tailwind CSS with Forms and Container Queries -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet"/>
+    <!-- Material Symbols Outlined -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <!-- Custom CSS -->
+    <link href="style.css" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-container": "#0566d9",
+                        "inverse-on-surface": "#283044",
+                        "surface-variant": "#2d3449",
+                        "background": "#0b1326",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "on-tertiary-container": "#00311f",
+                        "on-error-container": "#ffdad6",
+                        "outline-variant": "#494454",
+                        "inverse-primary": "#6d3bd7",
+                        "tertiary-fixed": "#6ffbbe",
+                        "surface-container-high": "#222a3d",
+                        "on-surface": "#dae2fd",
+                        "tertiary": "#4edea3",
+                        "on-primary-fixed": "#23005c",
+                        "surface": "#0b1326",
+                        "on-secondary": "#002e6a",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "primary": "#d0bcff",
+                        "inverse-surface": "#dae2fd",
+                        "secondary": "#adc6ff",
+                        "error": "#ffb4ab",
+                        "primary-container": "#a078ff",
+                        "error-container": "#93000a",
+                        "surface-tint": "#d0bcff",
+                        "outline": "#958ea0",
+                        "secondary-fixed": "#d8e2ff",
+                        "on-primary": "#3c0091",
+                        "on-secondary-fixed-variant": "#004395",
+                        "on-secondary-container": "#e6ecff",
+                        "primary-fixed": "#e9ddff",
+                        "on-primary-fixed-variant": "#5516be",
+                        "on-secondary-fixed": "#001a42",
+                        "surface-container-highest": "#2d3449",
+                        "on-error": "#690005",
+                        "surface-container-lowest": "#060e20",
+                        "on-tertiary": "#003824",
+                        "primary-fixed-dim": "#d0bcff",
+                        "surface-dim": "#0b1326",
+                        "on-tertiary-fixed": "#002113",
+                        "surface-bright": "#31394d",
+                        "on-surface-variant": "#cbc3d7",
+                        "tertiary-container": "#00a572",
+                        "on-primary-container": "#340080",
+                        "surface-container-low": "#131b2e",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-background": "#dae2fd",
+                        "surface-container": "#171f33"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "4px",
+                        "gutter": "24px",
+                        "margin-desktop": "40px",
+                        "container-max": "1280px",
+                        "margin-mobile": "16px",
+                        "stack-md": "16px",
+                        "stack-sm": "8px",
+                        "stack-lg": "32px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "headline-md": ["Manrope"],
+                        "label-sm": ["Inter"],
+                        "display": ["Manrope"],
+                        "headline-lg": ["Manrope"],
+                        "label-md": ["Inter"],
+                        "body-lg": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen overflow-x-hidden relative flex">
+
+    <!-- Ambient background decorations -->
+    <div class="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-secondary/5 rounded-full blur-[120px]"></div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-gutter right-gutter z-[100] max-w-sm w-full bg-surface-container-high/90 backdrop-blur-md border border-white/10 rounded-xl p-4 shadow-2xl transition-all duration-300 transform translate-x-full opacity-0 pointer-events-none">
+        <div class="flex items-start gap-3">
+            <span id="toast-icon" class="material-symbols-outlined text-primary">info</span>
+            <div class="flex-grow">
+                <p id="toast-title" class="font-bold text-label-md">Notification</p>
+                <p id="toast-message" class="text-xs text-on-surface-variant/80 mt-1"></p>
+            </div>
+            <button onclick="hideToast()" class="material-symbols-outlined text-on-surface-variant/50 hover:text-on-surface text-sm">close</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP STRUCTURE -->
+    
+    <!-- 1. LOGIN/SIGN UP PAGE CONTAINER -->
+    <div id="auth-container" class="w-full flex items-center justify-center p-gutter min-h-screen">
+        <div class="w-full max-w-[440px] glass-card rounded-[24px] p-8 shadow-2xl relative overflow-hidden">
+            <div class="flex items-center gap-3 justify-center mb-6">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg active-glow">
+                    <span class="material-symbols-outlined text-on-primary">psychology</span>
+                </div>
+                <h1 class="font-display text-headline-md font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary leading-none">AI Quiz Genius</h1>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex border-b border-white/10 mb-6">
+                <button id="tab-login-btn" class="flex-1 pb-3 text-center border-b-2 border-primary font-bold text-primary transition-all duration-300">🔑 Login</button>
+                <button id="tab-signup-btn" class="flex-1 pb-3 text-center border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all duration-300">📝 Sign Up</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Username or Email</label>
+                    <input type="text" id="login-username" required class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface placeholder-on-surface-variant/40" placeholder="Enter username or email">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Password</label>
+                    <input type="password" id="login-password" required class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface placeholder-on-surface-variant/40" placeholder="Enter password">
+                </div>
+                <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-primary-container to-secondary-container text-on-primary font-bold shadow-lg hover:brightness-110 hover:shadow-primary/20 transition-all active:scale-[0.98] mt-2 flex items-center justify-center gap-2">
+                    <span>Log In</span>
+                    <span class="material-symbols-outlined text-sm">login</span>
+                </button>
+            </form>
+
+            <!-- Signup Form (Hidden initially) -->
+            <form id="signup-form" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Username</label>
+                    <input type="text" id="signup-username" required class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface placeholder-on-surface-variant/40" placeholder="Choose username">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Email Address</label>
+                    <input type="email" id="signup-email" required class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface placeholder-on-surface-variant/40" placeholder="yourname@example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Password</label>
+                    <input type="password" id="signup-password" required class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface placeholder-on-surface-variant/40" placeholder="Choose password">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Confirm Password</label>
+                    <input type="password" id="signup-confirm-password" required class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface placeholder-on-surface-variant/40" placeholder="Repeat password">
+                </div>
+                <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-primary-container to-secondary-container text-on-primary font-bold shadow-lg hover:brightness-110 hover:shadow-primary/20 transition-all active:scale-[0.98] mt-2 flex items-center justify-center gap-2">
+                    <span>Create Account</span>
+                    <span class="material-symbols-outlined text-sm">person_add</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. AUTHENTICATED SYSTEM SHELL (Hidden initially) -->
+    <div id="app-shell" class="w-full min-h-screen hidden flex">
+
+        <!-- Sidebar Navigation -->
+        <aside class="fixed left-0 top-0 h-full w-[280px] bg-surface/30 backdrop-blur-xl border-r border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.4)] flex flex-col py-stack-lg z-50">
+            <div class="px-6 mb-10">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg active-glow">
+                        <span class="material-symbols-outlined text-on-primary">psychology</span>
+                    </div>
+                    <div>
+                        <h1 class="font-display text-headline-md font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary leading-none">AI Quiz Genius</h1>
+                        <p class="text-[10px] uppercase tracking-widest text-on-surface-variant/50 font-bold mt-1">Intellectual Futurism</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav id="sidebar-nav" class="flex-grow space-y-2 px-4">
+                <button data-page="home" class="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-primary font-bold border-r-2 border-primary bg-primary/10 transition-all duration-300">
+                    <span class="material-symbols-outlined">home</span>
+                    <span>Home</span>
+                </button>
+                <button data-page="video" class="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant/70 font-medium hover:bg-white/5 hover:text-primary transition-all duration-300">
+                    <span class="material-symbols-outlined">video_library</span>
+                    <span>Video to Quiz</span>
+                </button>
+                <button data-page="pdf" class="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant/70 font-medium hover:bg-white/5 hover:text-primary transition-all duration-300">
+                    <span class="material-symbols-outlined">picture_as_pdf</span>
+                    <span>PDF to Quiz</span>
+                </button>
+                <button data-page="topic" class="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant/70 font-medium hover:bg-white/5 hover:text-primary transition-all duration-300">
+                    <span class="material-symbols-outlined">lightbulb</span>
+                    <span>Topic to Quiz</span>
+                </button>
+                <button data-page="library" class="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant/70 font-medium hover:bg-white/5 hover:text-primary transition-all duration-300">
+                    <span class="material-symbols-outlined">quiz</span>
+                    <span>My Quizzes</span>
+                </button>
+            </nav>
+
+            <div class="px-6 mb-6">
+                <button id="quick-create-btn" class="w-full py-3 rounded-xl bg-gradient-to-r from-primary-container to-secondary-container text-on-primary font-bold shadow-lg hover:brightness-110 hover:shadow-primary/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">add</span>
+                    <span>Create New Quiz</span>
+                </button>
+            </div>
+
+            <div class="mt-auto px-4 border-t border-white/5 pt-6">
+                <div class="flex items-center gap-3 px-4 py-3 mb-4 glass-card rounded-2xl">
+                    <div class="w-10 h-10 rounded-full overflow-hidden border border-primary/30 bg-surface-container-high flex items-center justify-center">
+                        <span class="material-symbols-outlined text-on-surface-variant">person</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p id="user-display-name" class="text-label-md font-bold truncate">User</p>
+                        <p class="text-[10px] text-on-surface-variant/60 uppercase tracking-tighter">Educator</p>
+                    </div>
+                </div>
+                <button id="logout-btn" class="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant/70 font-medium hover:bg-error/10 hover:text-error transition-all duration-300">
+                    <span class="material-symbols-outlined">logout</span>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="ml-[280px] min-h-screen flex flex-col flex-grow relative p-gutter">
+            
+            <!-- Global Top Header -->
+            <header class="flex justify-between items-center mb-8 bg-transparent">
+                <div class="flex items-center gap-2">
+                    <span id="breadcrumb-parent" class="text-on-surface-variant/50 font-label-md">Dashboard /</span>
+                    <span id="breadcrumb-current" class="text-on-surface font-headline-md font-bold">Home</span>
+                </div>
+                <div class="flex items-center gap-gutter">
+                    <div class="flex items-center gap-4">
+                        <!-- Backend Status -->
+                        <div id="backend-status" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-high border border-white/10 text-xs font-semibold">
+                            <span id="backend-indicator" class="w-2.5 h-2.5 rounded-full bg-error animate-pulse"></span>
+                            <span id="backend-status-text" class="text-on-surface-variant">Checking Backend...</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- APP SECTIONS (Only one active at a time) -->
+
+            <!-- A. HOME/DASHBOARD VIEW -->
+            <section id="view-home" class="space-y-6">
+                <!-- Welcome Banner -->
+                <div class="glass-card rounded-[24px] p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-[300px] h-[300px] bg-primary/5 blur-[80px] rounded-full"></div>
+                    <div class="space-y-2">
+                        <h2 class="font-display text-[28px] font-extrabold text-on-surface leading-tight">Welcome to AI Quiz Genius</h2>
+                        <p class="text-on-surface-variant/80 max-w-xl">Create comprehensive educational quizzes in seconds using advanced LLM analysis of videos, PDFs, or search topics. Run evaluations and review details inside your digital library.</p>
+                    </div>
+                    <button onclick="switchView('topic')" class="px-6 py-3 rounded-xl bg-gradient-to-r from-primary-container to-secondary-container text-on-primary font-bold shadow-lg hover:brightness-110 transition-all whitespace-nowrap active:scale-[0.98]">
+                        🚀 Get Started
+                    </button>
+                </div>
+
+                <!-- Stats Panel -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-card rounded-2xl p-6 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                            <span class="material-symbols-outlined text-2xl">menu_book</span>
+                        </div>
+                        <div>
+                            <p class="text-xs text-on-surface-variant/70 uppercase tracking-widest font-bold">Total Quizzes</p>
+                            <h3 id="stat-total-quizzes" class="text-3xl font-extrabold text-white mt-1">0</h3>
+                        </div>
+                    </div>
+                    <div class="glass-card rounded-2xl p-6 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-tertiary/10 text-tertiary flex items-center justify-center">
+                            <span class="material-symbols-outlined text-2xl">grade</span>
+                        </div>
+                        <div>
+                            <p class="text-xs text-on-surface-variant/70 uppercase tracking-widest font-bold">Average G-Eval Score</p>
+                            <h3 id="stat-avg-score" class="text-3xl font-extrabold text-white mt-1">0.0</h3>
+                        </div>
+                    </div>
+                    <div class="glass-card rounded-2xl p-6 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
+                            <span class="material-symbols-outlined text-2xl">schedule</span>
+                        </div>
+                        <div>
+                            <p class="text-xs text-on-surface-variant/70 uppercase tracking-widest font-bold">System Uptime</p>
+                            <h3 id="stat-uptime" class="text-xl font-bold text-white mt-2">N/A</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Core Pipelines Links -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                    <div onclick="switchView('video')" class="glass-card rounded-2xl p-6 cursor-pointer hover:border-primary/30 transition-all hover:translate-y-[-2px] space-y-3">
+                        <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                            <span class="material-symbols-outlined">video_library</span>
+                        </div>
+                        <h4 class="font-headline-md font-bold text-lg text-white">Video to Quiz</h4>
+                        <p class="text-xs text-on-surface-variant/70">Upload educational videos (MP4/MOV) and extract quizzes using Whisper audio transcription.</p>
+                    </div>
+                    <div onclick="switchView('pdf')" class="glass-card rounded-2xl p-6 cursor-pointer hover:border-primary/30 transition-all hover:translate-y-[-2px] space-y-3">
+                        <div class="w-10 h-10 rounded-lg bg-tertiary/10 text-tertiary flex items-center justify-center">
+                            <span class="material-symbols-outlined">picture_as_pdf</span>
+                        </div>
+                        <h4 class="font-headline-md font-bold text-lg text-white">PDF to Quiz</h4>
+                        <p class="text-xs text-on-surface-variant/70">Extract content from selectable textbooks and academic PDFs to generate targeted quizzes.</p>
+                    </div>
+                    <div onclick="switchView('topic')" class="glass-card rounded-2xl p-6 cursor-pointer hover:border-primary/30 transition-all hover:translate-y-[-2px] space-y-3">
+                        <div class="w-10 h-10 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center">
+                            <span class="material-symbols-outlined">lightbulb</span>
+                        </div>
+                        <h4 class="font-headline-md font-bold text-lg text-white">Topic to Quiz</h4>
+                        <p class="text-xs text-on-surface-variant/70">Run automated web search integrations on any educational topic to build structured quizzes.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- B. VIDEO TO QUIZ VIEW -->
+            <section id="view-video" class="space-y-6 hidden">
+                <div class="glass-card rounded-3xl p-8 max-w-3xl mx-auto space-y-6">
+                    <div>
+                        <h3 class="font-headline-lg text-headline-lg font-bold text-white mb-2">🎬 Video to Quiz Pipeline</h3>
+                        <p class="text-label-md text-on-surface-variant/80">Upload an educational video. Our system will extract the audio track, transcribe it using Whisper, and structure a custom quiz.</p>
+                    </div>
+
+                    <!-- Dropzone -->
+                    <div id="video-dropzone" class="border-2 border-dashed border-white/10 hover:border-primary/50 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all bg-surface-container-low/30 hover:bg-white/5 space-y-4">
+                        <span class="material-symbols-outlined text-4xl text-primary-container animate-pulse">cloud_upload</span>
+                        <div class="text-center">
+                            <p class="font-bold text-label-md text-white">Click to upload or drag & drop</p>
+                            <p class="text-xs text-on-surface-variant/60 mt-1">Supported formats: MP4, MOV, AVI, MKV (Max 100MB)</p>
+                        </div>
+                        <input type="file" id="video-file-input" accept=".mp4,.mov,.avi,.mkv" class="hidden">
+                    </div>
+
+                    <!-- File Details / Progress -->
+                    <div id="video-upload-info" class="hidden glass-card rounded-xl p-4 flex items-center justify-between border border-primary/20">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-primary text-2xl">movie</span>
+                            <div>
+                                <p id="video-filename" class="text-xs font-bold text-white max-w-sm truncate">video.mp4</p>
+                                <p id="video-filesize" class="text-[10px] text-on-surface-variant/70">0.0 MB</p>
+                            </div>
+                        </div>
+                        <button id="btn-cancel-video" class="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors">delete</button>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div id="video-progress-container" class="hidden space-y-2">
+                        <div class="flex justify-between text-xs font-bold text-on-surface-variant">
+                            <span id="video-progress-text">Uploading...</span>
+                            <span id="video-progress-pct">0%</span>
+                        </div>
+                        <div class="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                            <div id="video-progress-bar" class="bg-gradient-to-r from-primary to-secondary h-full w-0 transition-all duration-300"></div>
+                        </div>
+                    </div>
+
+                    <button id="btn-generate-video-quiz" disabled class="w-full py-3.5 rounded-xl bg-white/5 text-on-surface-variant/40 font-bold border border-white/5 cursor-not-allowed transition-all flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined">psychology</span>
+                        <span>Generate Quiz from Video</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- C. PDF TO QUIZ VIEW -->
+            <section id="view-pdf" class="space-y-6 hidden">
+                <div class="glass-card rounded-3xl p-8 max-w-3xl mx-auto space-y-6">
+                    <div>
+                        <h3 class="font-headline-lg text-headline-lg font-bold text-white mb-2">📄 PDF to Quiz Pipeline</h3>
+                        <p class="text-label-md text-on-surface-variant/80">Upload academic materials or textbook chapters in PDF format. We will parse the selectable text and construct a quiz.</p>
+                    </div>
+
+                    <!-- Dropzone -->
+                    <div id="pdf-dropzone" class="border-2 border-dashed border-white/10 hover:border-primary/50 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all bg-surface-container-low/30 hover:bg-white/5 space-y-4">
+                        <span class="material-symbols-outlined text-4xl text-primary-container animate-pulse">cloud_upload</span>
+                        <div class="text-center">
+                            <p class="font-bold text-label-md text-white">Click to upload or drag & drop</p>
+                            <p class="text-xs text-on-surface-variant/60 mt-1">Supported formats: PDF (Selectable text only, max 50MB)</p>
+                        </div>
+                        <input type="file" id="pdf-file-input" accept=".pdf" class="hidden">
+                    </div>
+
+                    <!-- File Details / Progress -->
+                    <div id="pdf-upload-info" class="hidden glass-card rounded-xl p-4 flex items-center justify-between border border-primary/20">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-primary text-2xl">picture_as_pdf</span>
+                            <div>
+                                <p id="pdf-filename" class="text-xs font-bold text-white max-w-sm truncate">document.pdf</p>
+                                <p id="pdf-filesize" class="text-[10px] text-on-surface-variant/70">0.0 MB</p>
+                            </div>
+                        </div>
+                        <button id="btn-cancel-pdf" class="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors">delete</button>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div id="pdf-progress-container" class="hidden space-y-2">
+                        <div class="flex justify-between text-xs font-bold text-on-surface-variant">
+                            <span id="pdf-progress-text">Uploading...</span>
+                            <span id="pdf-progress-pct">0%</span>
+                        </div>
+                        <div class="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                            <div id="pdf-progress-bar" class="bg-gradient-to-r from-primary to-secondary h-full w-0 transition-all duration-300"></div>
+                        </div>
+                    </div>
+
+                    <button id="btn-generate-pdf-quiz" disabled class="w-full py-3.5 rounded-xl bg-white/5 text-on-surface-variant/40 font-bold border border-white/5 cursor-not-allowed transition-all flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined">psychology</span>
+                        <span>Generate Quiz from PDF</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- D. TOPIC TO QUIZ VIEW -->
+            <section id="view-topic" class="space-y-6 hidden">
+                <div class="glass-card rounded-3xl p-8 max-w-3xl mx-auto space-y-6">
+                    <div>
+                        <h3 class="font-headline-lg text-headline-lg font-bold text-white mb-2">🔍 Topic to Quiz Pipeline</h3>
+                        <p class="text-label-md text-on-surface-variant/80">Enter any educational topic. The AI will crawl multiple web sources (Wikipedia / DuckDuckGo), compile details, and assemble a comprehensive quiz.</p>
+                    </div>
+
+                    <form id="topic-quiz-form" class="space-y-5">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Topic Input</label>
+                            <input type="text" id="topic-input" required class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface placeholder-on-surface-variant/40" placeholder="e.g. Quantum Computing, French Revolution, CRISPR...">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Web Source Count</label>
+                            <select id="topic-max-results" class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface">
+                                <option value="3">3 sources (Faster)</option>
+                                <option value="5" selected>5 sources (Recommended)</option>
+                                <option value="7">7 sources (Comprehensive)</option>
+                                <option value="10">10 sources (Deep Dive)</option>
+                            </select>
+                            <p class="text-[10px] text-on-surface-variant/50 mt-1">Controls how many web search excerpts are analyzed prior to generation.</p>
+                        </div>
+
+                        <!-- Generation Progress -->
+                        <div id="topic-progress" class="hidden space-y-3 glass-card p-4 rounded-xl border border-primary/20">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-primary animate-spin">sync</span>
+                                <p class="text-xs text-on-surface-variant font-medium">Gathering sources and composing MCQ quiz... Please wait (30-60s).</p>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="btn-generate-topic-quiz" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-primary-container to-secondary-container text-on-primary font-bold shadow-lg hover:brightness-110 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined">psychology</span>
+                            <span>Generate Quiz from Topic</span>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- E. MY QUIZZES LIBRARY VIEW -->
+            <section id="view-library" class="space-y-6 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <p class="text-label-sm text-on-surface-variant/70">Revisit, review performance, or clear previous quizzes</p>
+                </div>
+
+                <!-- Quizzes Grid/List -->
+                <div id="library-container" class="grid grid-cols-1 gap-4">
+                    <!-- Dynamic rendering in JS -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="library-empty-state" class="hidden glass-card rounded-2xl p-12 text-center max-w-md mx-auto space-y-4">
+                    <span class="material-symbols-outlined text-5xl text-on-surface-variant/30">inventory_2</span>
+                    <div>
+                        <p class="font-bold text-white text-lg">No saved quizzes found</p>
+                        <p class="text-xs text-on-surface-variant/60 mt-1">Start by generating your first quiz from Video, PDF, or Topic inputs.</p>
+                    </div>
+                    <button onclick="switchView('topic')" class="px-6 py-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all font-semibold text-xs">
+                        🚀 Create First Quiz
+                    </button>
+                </div>
+            </section>
+
+            <!-- F. INTERACTIVE QUIZ PLAYER VIEW -->
+            <section id="view-quiz" class="space-y-6 hidden">
+                <div class="flex justify-between items-start gap-4">
+                    <div>
+                        <h2 id="active-quiz-title" class="font-display text-2xl font-extrabold text-white">Quiz Title</h2>
+                        <p id="active-quiz-type" class="text-xs text-primary font-semibold mt-1">Topic Search Pipeline</p>
+                    </div>
+                </div>
+
+                <!-- Tabs header -->
+                <div class="flex border-b border-white/10 mb-6 bg-surface-container-low/30 rounded-xl p-1">
+                    <button id="quiz-tab-take" class="flex-grow py-3 text-center font-bold text-primary border-b-2 border-primary transition-all rounded-lg">✏️ Take the Quiz</button>
+                    <button id="quiz-tab-summary" class="flex-grow py-3 text-center font-semibold text-on-surface-variant hover:text-on-surface transition-all rounded-lg">💡 Summary</button>
+                    <button id="quiz-tab-eval" class="flex-grow py-3 text-center font-semibold text-on-surface-variant hover:text-on-surface transition-all rounded-lg">📊 Evaluation</button>
+                </div>
+
+                <!-- Tab: Take Quiz -->
+                <div id="quiz-tab-content-take" class="space-y-6">
+                    <form id="active-quiz-form" class="space-y-6">
+                        <!-- Questions injected dynamically by JS -->
+                        <div id="quiz-questions-container" class="space-y-6"></div>
+
+                        <!-- Review / Score Banner (hidden before submit) -->
+                        <div id="quiz-score-banner" class="hidden glass-card rounded-2xl p-8 text-center border border-primary/20 space-y-2">
+                            <p class="text-xs uppercase tracking-widest font-bold text-primary">Final Quiz Score</p>
+                            <h3 id="quiz-score-text" class="text-3xl font-extrabold text-white">0 / 5 (0.0%)</h3>
+                            <p class="text-xs text-on-surface-variant/80">Scroll up to check individual question feedback and explanations.</p>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <button type="submit" id="btn-submit-quiz" class="flex-grow py-3.5 rounded-xl bg-gradient-to-r from-primary-container to-secondary-container text-on-primary font-bold shadow-lg hover:brightness-110 transition-all active:scale-[0.98]">
+                                Submit Answers
+                            </button>
+                            <button type="button" id="btn-retake-quiz" class="hidden flex-grow py-3.5 rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all font-bold">
+                                Retake Quiz
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Tab: Summary -->
+                <div id="quiz-tab-content-summary" class="hidden glass-card rounded-2xl p-8 space-y-4">
+                    <h3 class="font-headline-md text-headline-md font-bold text-white border-b border-white/5 pb-2">💡 Educational Summary</h3>
+                    <div id="quiz-summary-text" class="text-on-surface-variant/90 leading-relaxed text-sm space-y-3 prose prose-invert max-w-none">
+                        <!-- Summary markdown converted or rendered -->
+                    </div>
+                </div>
+
+                <!-- Tab: Evaluation -->
+                <div id="quiz-tab-content-eval" class="hidden space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="glass-card rounded-2xl p-6 flex flex-col items-center justify-center text-center space-y-2 md:col-span-1 border border-primary/20">
+                            <div id="eval-score-circle" class="w-24 h-24 rounded-full border-4 border-primary flex items-center justify-center text-2xl font-extrabold text-white">8.5</div>
+                            <p class="text-[10px] text-on-surface-variant/70 uppercase tracking-widest font-bold mt-2">G-Eval Quality Score</p>
+                        </div>
+                        <div class="glass-card rounded-2xl p-6 md:col-span-3 space-y-2">
+                            <h4 class="font-bold text-white">Evaluator Feedback</h4>
+                            <p id="eval-feedback-text" class="text-xs text-on-surface-variant/80 leading-relaxed">Evaluation analysis is pending.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Download Bar -->
+                <div class="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t border-white/5">
+                    <button id="btn-download-json" class="flex-1 py-3 px-6 rounded-xl bg-surface-container-high border border-white/10 hover:bg-white/5 transition-all text-xs font-semibold flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-sm">download</span>
+                        <span>Download Quiz (JSON)</span>
+                    </button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- JS Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>

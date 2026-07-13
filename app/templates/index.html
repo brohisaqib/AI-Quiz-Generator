@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Quiz Generator - Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Marked.js for rendering markdown summaries -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.15);
+            --primary-hover: #4f46e5;
+            --secondary: #a855f7;
+            --secondary-hover: #9333ea;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --error: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(15, 23, 42, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-card: rgba(30, 41, 59, 0.45);
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.25rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: -0.02em;
+        }
+
+        .logo i {
+            background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+            -webkit-background-clip: border-box;
+            -webkit-text-fill-color: var(--text-main);
+            padding: 0.5rem;
+            border-radius: var(--radius-sm);
+            font-size: 1.25rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: var(--transition);
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--text-main);
+        }
+
+        main {
+            flex: 1;
+            max-width: 1200px;
+            width: 100%;
+            margin: 2.5rem auto;
+            padding: 0 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .hero-section {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-section h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.75rem;
+            background: linear-gradient(to right, #f8fafc, #cbd5e1, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+        }
+
+        .hero-section p {
+            color: var(--text-muted);
+            font-size: 1.15rem;
+            max-width: 600px;
+            margin: 0 auto;
+            font-weight: 400;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 900px) {
+            .dashboard-grid {
+                grid-template-columns: 450px 1fr;
+            }
+        }
+
+        .card {
+            background: var(--glass-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 1rem;
+        }
+
+        .card-title i {
+            color: var(--primary);
+        }
+
+        /* Upload Area styling */
+        .upload-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: var(--radius-md);
+            padding: 3rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: rgba(15, 23, 42, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--primary);
+            background: var(--primary-glow);
+            box-shadow: 0 0 20px 0 rgba(99, 102, 241, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1.25rem;
+            transition: var(--transition);
+        }
+
+        .upload-zone:hover .upload-icon {
+            transform: translateY(-5px) scale(1.05);
+        }
+
+        .upload-text h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .upload-text p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .file-selected-box {
+            display: none;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 1rem;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 1rem;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .file-info i {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .file-details h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 250px;
+        }
+
+        .file-details p {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .btn-remove-file {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: var(--transition);
+            padding: 0.25rem;
+        }
+
+        .btn-remove-file:hover {
+            color: var(--error);
+            transform: scale(1.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: none;
+            color: var(--text-main);
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* Status & Pipeline Tracker styling */
+        .pipeline-tracker {
+            display: none;
+            flex-direction: column;
+            gap: 1.25rem;
+            margin-top: 1rem;
+        }
+
+        .pipeline-step {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            border-radius: var(--radius-sm);
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 3px solid rgba(255, 255, 255, 0.1);
+            transition: var(--transition);
+        }
+
+        .pipeline-step.pending {
+            border-left-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+        }
+
+        .pipeline-step.active {
+            border-left-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .pipeline-step.completed {
+            border-left-color: var(--success);
+            background: rgba(16, 185, 129, 0.03);
+            color: var(--text-main);
+        }
+
+        .pipeline-step.failed {
+            border-left-color: var(--error);
+            background: rgba(239, 68, 68, 0.03);
+            color: var(--error);
+        }
+
+        .step-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.8rem;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+        }
+
+        .pipeline-step.active .step-icon {
+            background: var(--primary);
+            color: var(--text-main);
+            animation: pulse 1.5s infinite;
+        }
+
+        .pipeline-step.completed .step-icon {
+            background: var(--success);
+            color: var(--text-main);
+        }
+
+        .pipeline-step.failed .step-icon {
+            background: var(--error);
+            color: var(--text-main);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+
+        /* Results Panel Styling */
+        .results-container {
+            display: none;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .results-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--glass-border);
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.75rem 1.25rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: var(--text-main);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--primary);
+            box-shadow: 0 0 8px var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Dashboard Overview Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: var(--primary);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .metric-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .metric-gauge {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .metric-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Summary Panel Styling */
+        .summary-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .summary-box h1, .summary-box h2, .summary-box h3 {
+            margin-bottom: 1rem;
+            margin-top: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .summary-box h1 { font-size: 1.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; }
+        .summary-box h2 { font-size: 1.25rem; }
+        .summary-box h3 { font-size: 1.1rem; }
+
+        .summary-box p {
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+        }
+
+        .summary-box ul, .summary-box ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+        }
+
+        .summary-box li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Quiz Panel Styling */
+        .quiz-title-main {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .quiz-title-main i {
+            color: var(--secondary);
+        }
+
+        .questions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .question-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 1.75rem;
+            transition: var(--transition);
+        }
+
+        .question-card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            color: var(--text-main);
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        @media (min-width: 600px) {
+            .options-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-sm);
+            padding: 1rem 1.25rem;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            width: 100%;
+        }
+
+        .option-btn:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .option-btn.selected {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: var(--primary);
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.1);
+        }
+
+        .option-btn.correct {
+            background: rgba(16, 185, 129, 0.15) !important;
+            border-color: var(--success) !important;
+            color: var(--success) !important;
+        }
+
+        .option-btn.incorrect {
+            background: rgba(239, 68, 68, 0.15) !important;
+            border-color: var(--error) !important;
+            color: var(--error) !important;
+        }
+
+        .option-letter {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.06);
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .option-btn.correct .option-letter {
+            background: var(--success);
+            color: var(--text-main);
+        }
+
+        .option-btn.incorrect .option-letter {
+            background: var(--error);
+            color: var(--text-main);
+        }
+
+        .explanation-box {
+            display: none;
+            background: rgba(16, 185, 129, 0.03);
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            border-radius: var(--radius-sm);
+            padding: 1.25rem;
+            margin-top: 1.25rem;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .explanation-title {
+            font-weight: 700;
+            color: var(--success);
+            font-size: 0.9rem;
+            margin-bottom: 0.35rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .explanation-text {
+            color: #cbd5e1;
+            font-size: 0.9rem;
+        }
+
+        /* Error Banner styling */
+        .error-banner {
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--error);
+            border-radius: var(--radius-md);
+            padding: 1rem 1.5rem;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .error-banner i {
+            font-size: 1.5rem;
+        }
+
+        /* Footer styling */
+        footer {
+            margin-top: auto;
+            border-top: 1px solid var(--glass-border);
+            padding: 1.5rem;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.2);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <i class="fa-solid fa-graduation-cap"></i>
+                AI Quiz Generator
+            </div>
+            <div class="nav-links">
+                <a href="#" class="nav-link active">Dashboard</a>
+                <a href="/health" target="_blank" class="nav-link">Health API</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="hero-section">
+            <h1>Create Interactive Quizzes from Video</h1>
+            <p>Upload lecture slides or videos to generate custom summaries, structured multiple choice questions, and evaluate accuracy with AI G-Eval.</p>
+        </div>
+
+        <div class="error-banner" id="error-banner">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <div id="error-text">An error occurred during quiz generation.</div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Sidebar: Upload & Progress Controller -->
+            <div class="card" id="control-card">
+                <div class="card-title">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    Upload Workspace
+                </div>
+                
+                <div class="upload-zone" id="drop-zone">
+                    <input type="file" id="file-input" accept=".mp4,.mov,.avi,.mkv">
+                    <div class="upload-icon">
+                        <i class="fa-solid fa-file-video"></i>
+                    </div>
+                    <div class="upload-text">
+                        <h3>Drag & Drop Video Here</h3>
+                        <p>Supports MP4, MOV, AVI, MKV (Max 100MB)</p>
+                    </div>
+                </div>
+
+                <div class="file-selected-box" id="file-box">
+                    <div class="file-info">
+                        <i class="fa-solid fa-file-lines"></i>
+                        <div class="file-details">
+                            <h4 id="file-name">lecture.mp4</h4>
+                            <p id="file-size">14.2 MB</p>
+                        </div>
+                    </div>
+                    <button class="btn-remove-file" id="btn-remove-file">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <button class="btn" id="btn-generate" disabled>
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    Generate AI Quiz
+                </button>
+
+                <!-- Pipeline Status Trackers -->
+                <div class="pipeline-tracker" id="pipeline-tracker">
+                    <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem;">Pipeline Stages</h4>
+                    <div class="pipeline-step pending" id="step-upload">
+                        <div class="step-icon">1</div>
+                        <div>Uploading video file...</div>
+                    </div>
+                    <div class="pipeline-step pending" id="step-audio">
+                        <div class="step-icon">2</div>
+                        <div>Extracting audio track (MoviePy)...</div>
+                    </div>
+                    <div class="pipeline-step pending" id="step-transcribe">
+                        <div class="step-icon">3</div>
+                        <div>Transcribing speech (Whisper)...</div>
+                    </div>
+                    <div class="pipeline-step pending" id="step-summary">
+                        <div class="step-icon">4</div>
+                        <div>Generating educational summary (GPT-4o)...</div>
+                    </div>
+                    <div class="pipeline-step pending" id="step-quiz">
+                        <div class="step-icon">5</div>
+                        <div>Structuring quiz questions (LangChain)...</div>
+                    </div>
+                    <div class="pipeline-step pending" id="step-eval">
+                        <div class="step-icon">6</div>
+                        <div>Evaluating quiz quality (G-Eval)...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area: Results -->
+            <div class="card" style="min-height: 500px;" id="results-panel">
+                <div class="card-title">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Workspace Output
+                </div>
+
+                <div id="results-placeholder" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: var(--text-muted); gap: 1rem; padding: 3rem 0;">
+                    <i class="fa-solid fa-server" style="font-size: 4rem; opacity: 0.2;"></i>
+                    <p style="font-size: 1.1rem; max-width: 300px;">Upload a lecture video file and start the pipeline to view results here.</p>
+                </div>
+
+                <div class="results-container" id="results-container">
+                    <div class="results-tabs">
+                        <button class="tab-btn active" data-tab="overview">Overview</button>
+                        <button class="tab-btn" data-tab="summary">Summary</button>
+                        <button class="tab-btn" data-tab="quiz">Interactive Quiz</button>
+                    </div>
+
+                    <!-- TAB: OVERVIEW (G-Eval metrics) -->
+                    <div class="tab-content active" id="tab-overview">
+                        <div style="margin-bottom: 2rem;">
+                            <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem;" id="generated-quiz-title-overview">Quiz Title</h3>
+                            <p style="color: var(--text-muted);">G-Eval quality evaluation criteria using AI-assisted human preferences benchmarks.</p>
+                        </div>
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-value" id="val-overall">9.2</div>
+                                <div class="metric-title">Overall Score</div>
+                                <div class="metric-gauge"><div class="metric-fill" id="fill-overall"></div></div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value" id="val-relevance">9.5</div>
+                                <div class="metric-title">Relevance</div>
+                                <div class="metric-gauge"><div class="metric-fill" id="fill-relevance"></div></div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value" id="val-clarity">9.0</div>
+                                <div class="metric-title">Clarity</div>
+                                <div class="metric-gauge"><div class="metric-fill" id="fill-clarity"></div></div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value" id="val-difficulty">8.5</div>
+                                <div class="metric-title">Difficulty</div>
+                                <div class="metric-gauge"><div class="metric-fill" id="fill-difficulty"></div></div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value" id="val-coverage">9.5</div>
+                                <div class="metric-title">Coverage</div>
+                                <div class="metric-gauge"><div class="metric-fill" id="fill-coverage"></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB: SUMMARY -->
+                    <div class="tab-content" id="tab-summary">
+                        <div class="summary-box" id="summary-content">
+                            <!-- Rendered Summary -->
+                        </div>
+                    </div>
+
+                    <!-- TAB: INTERACTIVE QUIZ -->
+                    <div class="tab-content" id="tab-quiz">
+                        <div class="quiz-title-main">
+                            <i class="fa-solid fa-clipboard-question"></i>
+                            <span id="generated-quiz-title-quiz">Interactive Quiz</span>
+                        </div>
+                        <div class="questions-list" id="questions-container">
+                            <!-- Questions will load here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        &copy; 2026 AI Quiz Generator Dashboard | Powered by GPT-4o & Whisper
+    </footer>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileBox = document.getElementById('file-box');
+        const fileNameEl = document.getElementById('file-name');
+        const fileSizeEl = document.getElementById('file-size');
+        const btnRemoveFile = document.getElementById('btn-remove-file');
+        const btnGenerate = document.getElementById('btn-generate');
+        
+        const pipelineTracker = document.getElementById('pipeline-tracker');
+        const resultsPlaceholder = document.getElementById('results-placeholder');
+        const resultsContainer = document.getElementById('results-container');
+        const errorBanner = document.getElementById('error-banner');
+        const errorText = document.getElementById('error-text');
+
+        // Pipeline steps elements
+        const steps = {
+            upload: document.getElementById('step-upload'),
+            audio: document.getElementById('step-audio'),
+            transcribe: document.getElementById('step-transcribe'),
+            summary: document.getElementById('step-summary'),
+            quiz: document.getElementById('step-quiz'),
+            eval: document.getElementById('step-eval')
+        };
+
+        let selectedFile = null;
+
+        // Drag & Drop event handlers
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFileSelection(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                handleFileSelection(fileInput.files[0]);
+            }
+        });
+
+        function handleFileSelection(file) {
+            // Basic validation
+            const allowedExtensions = ['.mp4', '.mov', '.avi', '.mkv'];
+            const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+            
+            if (!allowedExtensions.includes(fileExtension)) {
+                showError("Invalid file type. Please upload a valid video format (.mp4, .mov, .avi, .mkv).");
+                return;
+            }
+
+            if (file.size > 104857600) { // 100MB
+                showError("File is too large. Maximum allowed size is 100 MB.");
+                return;
+            }
+
+            selectedFile = file;
+            fileNameEl.textContent = file.name;
+            fileSizeEl.textContent = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+            
+            dropZone.style.display = 'none';
+            fileBox.style.display = 'flex';
+            btnGenerate.disabled = false;
+            errorBanner.style.display = 'none';
+        }
+
+        btnRemoveFile.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            fileBox.style.display = 'none';
+            dropZone.style.display = 'block';
+            btnGenerate.disabled = true;
+        });
+
+        function showError(message) {
+            errorText.textContent = message;
+            errorBanner.style.display = 'flex';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Tab selection logic
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.getAttribute('data-tab');
+                
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                btn.classList.add('active');
+                document.getElementById(`tab-${tabId}`).classList.add('active');
+            });
+        });
+
+        // Pipeline execution
+        btnGenerate.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            // Reset UI
+            errorBanner.style.display = 'none';
+            resultsPlaceholder.style.display = 'none';
+            resultsContainer.style.display = 'none';
+            pipelineTracker.style.display = 'flex';
+            btnGenerate.disabled = true;
+            btnRemoveFile.disabled = true;
+
+            // Reset step statuses
+            Object.values(steps).forEach(step => {
+                step.className = 'pipeline-step pending';
+            });
+
+            let videoId = null;
+
+            try {
+                // STAGE 1: Upload Video
+                updateStepStatus('upload', 'active');
+                const uploadFormData = new FormData();
+                uploadFormData.append('file', selectedFile);
+
+                const uploadResponse = await fetch('/upload-video', {
+                    method: 'POST',
+                    body: uploadFormData
+                });
+
+                if (!uploadResponse.ok) {
+                    const errData = await uploadResponse.json();
+                    throw new Error(errData.error || "Failed to upload video");
+                }
+
+                const uploadData = await uploadResponse.json();
+                videoId = uploadData.video_id;
+                updateStepStatus('upload', 'completed');
+
+                // STAGE 2-6: AI Quiz Pipeline Execution
+                // In our backend, the /generate-quiz endpoint runs all these stages (audio extraction, Whisper, summary, quiz build, G-eval) synchronously.
+                // We will animate the steps as the backend works. Since the backend handles stages 2 to 6, we'll progressively update steps dynamically.
+                updateStepStatus('audio', 'active');
+                
+                // Let's trigger generate-quiz
+                const quizPromise = fetch('/generate-quiz', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ video_id: videoId })
+                });
+
+                // Simulate progress updates for the user while the API runs
+                const pipelineSimTimer1 = setTimeout(() => {
+                    updateStepStatus('audio', 'completed');
+                    updateStepStatus('transcribe', 'active');
+                }, 4000);
+
+                const pipelineSimTimer2 = setTimeout(() => {
+                    updateStepStatus('transcribe', 'completed');
+                    updateStepStatus('summary', 'active');
+                }, 10000);
+
+                const pipelineSimTimer3 = setTimeout(() => {
+                    updateStepStatus('summary', 'completed');
+                    updateStepStatus('quiz', 'active');
+                }, 15000);
+
+                const pipelineSimTimer4 = setTimeout(() => {
+                    updateStepStatus('quiz', 'completed');
+                    updateStepStatus('eval', 'active');
+                }, 22000);
+
+                const response = await quizPromise;
+                
+                // Clear timers
+                clearTimeout(pipelineSimTimer1);
+                clearTimeout(pipelineSimTimer2);
+                clearTimeout(pipelineSimTimer3);
+                clearTimeout(pipelineSimTimer4);
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error || "Failed to generate quiz");
+                }
+
+                const quizData = await response.json();
+                
+                // Complete all steps
+                Object.keys(steps).forEach(key => {
+                    if (key !== 'upload') updateStepStatus(key, 'completed');
+                });
+
+                // Populate Results
+                displayQuizResults(quizData);
+
+            } catch (err) {
+                // Mark active step as failed
+                const activeStep = Object.keys(steps).find(key => steps[key].classList.contains('active'));
+                if (activeStep) {
+                    updateStepStatus(activeStep, 'failed');
+                } else {
+                    Object.values(steps).forEach(step => {
+                        if (step.classList.contains('pending')) {
+                            step.className = 'pipeline-step failed';
+                        }
+                    });
+                }
+                showError(err.message || "An unexpected error occurred in the pipeline.");
+                resultsPlaceholder.style.display = 'flex';
+            } finally {
+                btnGenerate.disabled = false;
+                btnRemoveFile.disabled = false;
+            }
+        });
+
+        function updateStepStatus(stepKey, status) {
+            const stepEl = steps[stepKey];
+            if (!stepEl) return;
+            stepEl.className = `pipeline-step ${status}`;
+        }
+
+        function displayQuizResults(data) {
+            pipelineTracker.style.display = 'none';
+            resultsContainer.style.display = 'flex';
+            
+            // Set Titles
+            document.getElementById('generated-quiz-title-overview').textContent = data.title;
+            document.getElementById('generated-quiz-title-quiz').textContent = data.title;
+
+            // Overview Metrics & Gauges
+            const metrics = {
+                overall: data.evaluation.overall_score,
+                relevance: data.evaluation.relevance,
+                clarity: data.evaluation.clarity,
+                difficulty: data.evaluation.difficulty,
+                coverage: data.evaluation.coverage
+            };
+
+            Object.keys(metrics).forEach(m => {
+                const val = metrics[m].toFixed(1);
+                document.getElementById(`val-${m}`).textContent = val;
+                
+                // Fill bar (value is out of 10)
+                const percentage = (metrics[m] / 10) * 100;
+                document.getElementById(`fill-${m}`).style.width = `${percentage}%`;
+            });
+
+            // Summary Render
+            document.getElementById('summary-content').innerHTML = marked.parse(data.summary);
+
+            // Quiz Render
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+
+            data.questions.forEach((q, idx) => {
+                const card = document.createElement('div');
+                card.className = 'question-card';
+                card.innerHTML = `
+                    <div class="question-text">${idx + 1}. ${q.question}</div>
+                    <div class="options-grid">
+                        ${q.options.map((opt, oIdx) => {
+                            const letter = String.fromCharCode(65 + oIdx); // A, B, C, D
+                            return `
+                                <button class="option-btn" onclick="checkOption(this, '${opt}', '${q.answer}', 'explain-${idx}')">
+                                    <span class="option-letter">${letter}</span>
+                                    <span>${opt}</span>
+                                </button>
+                            `;
+                        }).join('')}
+                    </div>
+                    <div class="explanation-box" id="explain-${idx}">
+                        <div class="explanation-title">
+                            <i class="fa-solid fa-circle-info"></i> Explanation
+                        </div>
+                        <div class="explanation-text">${q.explanation}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            // Switch to overview tab
+            document.querySelector('.tab-btn[data-tab="overview"]').click();
+        }
+
+        // Global function called on option click
+        window.checkOption = function(btn, selectedOption, correctOption, explanationId) {
+            const grid = btn.parentElement;
+            const buttons = grid.querySelectorAll('.option-btn');
+            
+            // Check if already answered
+            let alreadyAnswered = false;
+            buttons.forEach(b => {
+                if (b.classList.contains('correct') || b.classList.contains('incorrect')) {
+                    alreadyAnswered = true;
+                }
+            });
+            if (alreadyAnswered) return;
+
+            buttons.forEach(b => {
+                b.classList.remove('selected');
+                const optText = b.querySelector('span:nth-child(2)').textContent.trim();
+                
+                if (optText === correctOption) {
+                    b.classList.add('correct');
+                } else if (b === btn) {
+                    b.classList.add('incorrect');
+                }
+            });
+
+            // Reveal explanation
+            document.getElementById(explanationId).style.display = 'block';
+        }
+    </script>
+</body>
+</html>

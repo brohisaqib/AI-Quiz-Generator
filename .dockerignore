@@ -1,0 +1,46 @@
+# Python cache
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pycache
+
+# Environment secrets — NEVER bake into image
+.env
+.env.*
+
+# Runtime data — kept on host via volumes, not baked into image
+uploads/*
+!uploads/.gitkeep
+temp/*
+!temp/.gitkeep
+logs/*.log
+data/*.db
+outputs/*
+!outputs/.gitkeep
+
+# Version control & IDE
+.git/
+.gitignore
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docs & markdown (not needed at runtime)
+*.md
+README*
+CHANGELOG*
+LICENSE*
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+tests/
+
+# Python packaging artifacts
+*.egg-info/
+dist/
+build/

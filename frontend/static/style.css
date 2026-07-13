@@ -1,0 +1,76 @@
+/* Glassmorphism Design System */
+.glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Animations */
+@keyframes float {
+    0% { transform: translateY(0px) translateX(0px); }
+    50% { transform: translateY(-15px) translateX(5px); }
+    100% { transform: translateY(0px) translateX(0px); }
+}
+
+.animate-float {
+    animation: float 8s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 15px rgba(208, 188, 255, 0.2); }
+    50% { box-shadow: 0 0 25px rgba(208, 188, 255, 0.4); }
+}
+
+.active-glow {
+    animation: pulse-glow 3s infinite ease-in-out;
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(11, 19, 38, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(208, 188, 255, 0.3);
+}
+
+/* Typography styles */
+body {
+    background-color: #0b1326;
+    color: #dae2fd;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Form Styles */
+input, select, textarea {
+    transition: all 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+    box-shadow: 0 0 15px rgba(208, 188, 255, 0.15);
+}
+
+/* Drag zones */
+.drag-zone-active {
+    background: rgba(208, 188, 255, 0.05) !important;
+    border-color: #d0bcff !important;
+    box-shadow: 0 0 20px rgba(208, 188, 255, 0.2);
+}
