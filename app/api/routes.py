@@ -21,6 +21,7 @@ from app.services.summary_service import SummaryService
 from app.services.upload_service import UploadService
 from app.services.web_search_service import WebSearchService
 from app.services.whisper_service import WhisperService
+from app.services.youtube_service import YouTubeService
 from app.utils.auth import require_auth
 from app.utils.helpers import safe_delete_file
 from app.utils.logger import get_logger
@@ -583,6 +584,150 @@ def generate_quiz_from_topic() -> Any:
     except Exception as e:
         logger.error(f"Unexpected error in topic quiz pipeline: {e}", exc_info=True)
         return jsonify({"success": False, "error": f"An unexpected error occurred: {e}"}), 500
+
+
+# ---------------------------------------------------------------------------
+# YouTube → Quiz
+# ---------------------------------------------------------------------------
+
+@api_bp.route("/generate-quiz-from-youtube", methods=["POST"])
+@require_auth
+def generate_quiz_from_youtube() -> Any:
+    """Accept a YouTube URL, download its audio, transcribe, summarize,
+
+    generate a quiz, and evaluate it.
+    Cleans up all intermediate files after processing.
+
+    Returns:
+        A JSON response and HTTP status code.
+    """
+    logger.info("Received request to /generate-quiz-from-youtube")
+
+    # 1. Parse Input
+    data = request.get_json(silent=True)
+    if not data or "youtube_url" not in data:
+        logger.warning("Generate quiz from youtube failed: Missing youtube_url in request body")
+        return jsonify({"success": False, "error": "Missing youtube_url in request body"}), 400
+
+    youtube_url = data["youtube_url"].strip()
+    if not youtube_url:
+        logger.warning("Generate quiz from youtube failed: Empty youtube_url")
+        return jsonify({"success": False, "error": "The 'youtube_url' field is required and cannot be empty."}), 400
+
+    video_id = str(uuid.uuid4())
+    logger.info(f"Processing quiz generation from YouTube: {youtube_url} with ID: {video_id}")
+
+    audio_path = None
+    chunk_paths = []
+    start_time = time.time()
+
+    try:
+        # 2. Download YouTube audio
+        try:
+            audio_path = get_service("youtube", YouTubeService).download_audio(youtube_url, video_id)
+        except ValueError as ve:
+            logger.warning(f"YouTube download validation failed: {str(ve)}")
+            return jsonify({"success": False, "error": str(ve)}), 400
+        except Exception as e:
+            logger.error(f"YouTube download failed: {str(e)}", exc_info=True)
+            return jsonify({"success": False, "error": f"YouTube download failed: {str(e)}"}), 400
+
+        # 3. Chunk Audio
+        try:
+            chunk_paths = get_service("audio", AudioService).chunk_audio(audio_path, video_id)
+        except Exception as ac:
+            logger.error(f"Audio chunking stage failed: {str(ac)}")
+            return jsonify({"success": False, "error": f"Audio chunking failed: {str(ac)}"}), 422
+
+        # 4. Transcribe Audio (Whisper)
+        try:
+            transcription = get_service("whisper", WhisperService).transcribe_chunks(chunk_paths)
+        except ValueError as ve:
+            logger.warning(f"Whisper transcript empty: {str(ve)}")
+            return jsonify({"success": False, "error": str(ve)}), 422
+        except OpenAIServiceError as we:
+            logger.error(f"Whisper transcription AI error: {str(we)}")
+            return jsonify({"success": False, "error": str(we)}), we.status_code
+        except Exception as we:
+            logger.error(f"Whisper transcription failed: {str(we)}")
+            return jsonify({"success": False, "error": f"Whisper transcription failed: {str(we)}"}), 502
+
+        # 5. Generate Summary
+        try:
+            summary = get_service("summary", SummaryService).generate_summary(transcription)
+        except OpenAIServiceError as se:
+            return jsonify({"success": False, "error": str(se)}), se.status_code
+        except Exception as se:
+            logger.error(f"Summary generation failed: {str(se)}")
+            return jsonify({"success": False, "error": f"Summary generation failed: {str(se)}"}), 502
+
+        # 6. Generate Quiz
+        try:
+            quiz_result = get_service("quiz", QuizService).generate_quiz(summary, transcription)
+        except OpenAIServiceError as qe:
+            return jsonify({"success": False, "error": str(qe)}), qe.status_code
+        except Exception as qe:
+            logger.error(f"Quiz generation failed: {str(qe)}")
+            return jsonify({"success": False, "error": f"Quiz generation/parsing failed: {str(qe)}"}), 502
+
+        # 7. Evaluate Quiz
+        try:
+            evaluation_result = get_service("evaluation", EvaluationService).evaluate_quiz(
+                transcription, summary, quiz_result
+            )
+        except OpenAIServiceError as ee:
+            return jsonify({"success": False, "error": str(ee)}), ee.status_code
+        except Exception as ee:
+            logger.error(f"G-Eval quiz evaluation failed: {str(ee)}")
+            return jsonify({"success": False, "error": f"Quiz evaluation failed: {str(ee)}"}), 502
+
+        # 8. Build Structured JSON Response
+        response_data = _build_quiz_response(quiz_result, summary, evaluation_result)
+
+        # 9. Persist to PostgreSQL via SQLAlchemy
+        quiz_id = _persist_quiz_to_db(
+            user_id=g.current_user.id,
+            original_filename=youtube_url,
+            stored_path=None,
+            source_type="youtube",
+            title=quiz_result.title,
+            summary=summary,
+            quiz_json=response_data["questions"],
+            evaluation_score=evaluation_result.score,
+            evaluation_feedback=evaluation_result.feedback,
+            transcript=transcription,
+        )
+
+        response_data["quiz_id"] = quiz_id
+
+        # 10. Persist to disk (offline backups)
+        quiz_file_path = Config.OUTPUT_FOLDER / f"{video_id}_quiz.json"
+        with open(quiz_file_path, "w", encoding="utf-8") as f:
+            json.dump(response_data, f, indent=2, ensure_ascii=False)
+
+        transcript_file_path = Config.OUTPUT_FOLDER / f"{video_id}_transcript.txt"
+        with open(transcript_file_path, "w", encoding="utf-8") as f:
+            f.write(transcription)
+
+        processing_time = time.time() - start_time
+        logger.info(
+            f"Successfully processed quiz for YouTube URL: {youtube_url} "
+            f"in {processing_time:.2f}s"
+        )
+        return jsonify(response_data), 200
+
+    except Exception as e:
+        logger.error(f"Unexpected pipeline failure for YouTube URL {youtube_url}: {str(e)}", exc_info=True)
+        return jsonify({"success": False, "error": f"An unexpected pipeline error occurred: {str(e)}"}), 500
+
+    finally:
+        # Cleanup: Remove full WAV audio and MP3 chunks from filesystem
+        logger.info(f"Starting post-processing cleanup for YouTube ID: {video_id}")
+        if audio_path:
+            safe_delete_file(audio_path)
+        for chunk in chunk_paths:
+            safe_delete_file(chunk)
+        logger.info(f"Cleanup finished for YouTube ID: {video_id}")
 
 
 # ---------------------------------------------------------------------------

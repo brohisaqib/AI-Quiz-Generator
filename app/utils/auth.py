@@ -194,3 +194,18 @@ def require_auth(f):
         return f(*args, **kwargs)
 
     return decorated
+
+
+def require_admin(f):
+    """Decorator to protect Flask endpoints using Bearer access tokens, and check for admin role.
+
+    Returns:
+        403 if the user is not an admin.
+    """
+    @functools.wraps(f)
+    def decorated(*args, **kwargs):
+        if not hasattr(g, "current_user") or getattr(g.current_user, "role", "user") != "admin":
+            return jsonify({"success": False, "error": "Admin access required"}), 403
+        return f(*args, **kwargs)
+
+    return require_auth(decorated)

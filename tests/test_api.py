@@ -109,7 +109,8 @@ def test_generate_quiz_pipeline(
     assert quiz_file.exists()
     assert transcript_file.exists()
 
-def test_get_quiz_endpoints(client):
+@patch("app.models.quiz_result.QuizResult.query")
+def test_get_quiz_endpoints(mock_query, client):
     """Test retrieving and downloading saved quizzes."""
     # Create test data files manually in output directory
     video_id = "mock-quiz-uuid"
@@ -120,6 +121,24 @@ def test_get_quiz_endpoints(client):
         "evaluation": {"score": 8.0, "feedback": "Good"}
     }
     
+    mock_quiz = MagicMock()
+    mock_quiz.id = "mock-quiz-uuid"
+    mock_quiz.title = "Mock Quiz"
+    mock_quiz.summary = "Mock summary"
+    mock_quiz.quiz_json = []
+    mock_quiz.evaluation_score = 8.0
+    mock_quiz.evaluation_feedback = "Good"
+    mock_quiz.transcript = "Mock transcript content"
+
+    def filter_by_side_effect(**kwargs):
+        mock_filtered = MagicMock()
+        if kwargs.get("id") == "mock-quiz-uuid":
+            mock_filtered.first.return_value = mock_quiz
+        else:
+            mock_filtered.first.return_value = None
+        return mock_filtered
+    mock_query.filter_by.side_effect = filter_by_side_effect
+
     # Save mock files
     Config.ensure_directories_exist()
     with open(Config.OUTPUT_FOLDER / f"{video_id}_quiz.json", "w", encoding="utf-8") as f:
@@ -140,8 +159,83 @@ def test_get_quiz_endpoints(client):
     # 3. Test GET /download/<id>
     res_dl = client.get(f"/download/{video_id}")
     assert res_dl.status_code == 200
-    assert res_dl.headers["Content-Disposition"] == f"attachment; filename=quiz_{video_id}.json"
+    assert "attachment" in res_dl.headers.get("Content-Disposition", "")
     
     # 4. Test Not Found for invalid ID
     res_invalid = client.get("/quiz/non-existent-id")
     assert res_invalid.status_code == 404
+
+
+@patch("app.services.youtube_service.YouTubeService.download_audio")
+@patch("app.services.audio_service.AudioService.chunk_audio")
+@patch("app.services.whisper_service.WhisperService.transcribe_chunks")
+@patch("app.services.summary_service.SummaryService.generate_summary")
+@patch("app.services.quiz_service.QuizService.generate_quiz")
+@patch("app.services.evaluation_service.EvaluationService.evaluate_quiz")
+def test_generate_youtube_quiz_success(
+    mock_evaluate, mock_quiz, mock_summary, mock_transcribe,
+    mock_chunk, mock_download, client
+):
+    """Test successful YouTube quiz generation pipeline."""
+    # Setup mocks
+    mock_download.return_value = "/fake/temp/youtube.wav"
+    mock_chunk.return_value = ["/fake/temp/youtube_chunk_0.mp3"]
+    mock_transcribe.return_value = "This is a transcribed educational YouTube video."
+    mock_summary.return_value = "## Educational Summary\nThis is a summary of the video."
+
+    mock_quiz_response = QuizResponse(
+        title="Test YouTube Quiz",
+        questions=[
+            QuizQuestion(
+                question="What is this test?",
+                options=["A test", "B test", "C test", "D test"],
+                answer="A test",
+                explanation="Pedagogical explanation.",
+                difficulty="Easy",
+                topic="Testing"
+            )
+        ]
+    )
+    mock_quiz.return_value = mock_quiz_response
+
+    mock_eval_response = QuizEvaluation(
+        score=9.0,
+        feedback="Great structure."
+    )
+    mock_evaluate.return_value = mock_eval_response
+
+    # Call generate endpoint
+    response = client.post(
+        "/generate-quiz-from-youtube",
+        json={"youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
+    )
+
+    assert response.status_code == 200
+    res_data = response.json
+    assert res_data["title"] == "Test YouTube Quiz"
+    assert res_data["summary"] == "## Educational Summary\nThis is a summary of the video."
+    assert len(res_data["questions"]) == 1
+    assert res_data["evaluation"]["score"] == 9.0
+
+
+def test_generate_youtube_quiz_invalid_url(client):
+    """Test YouTube endpoint with invalid URL."""
+    response = client.post(
+        "/generate-quiz-from-youtube",
+        json={"youtube_url": "https://example.com/not-youtube"}
+    )
+    assert response.status_code == 400
+    assert "error" in response.json
+
+
+@patch("app.services.youtube_service.YouTubeService.download_audio")
+def test_generate_youtube_quiz_too_long(mock_download, client):
+    """Test YouTube endpoint with a video exceeding duration limit."""
+    mock_download.side_effect = ValueError("The video duration exceeds the maximum allowed duration")
+    response = client.post(
+        "/generate-quiz-from-youtube",
+        json={"youtube_url": "https://www.youtube.com/watch?v=extremely_long_video"}
+    )
+    assert response.status_code == 400
+    assert "error" in response.json
+

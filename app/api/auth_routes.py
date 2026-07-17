@@ -94,10 +94,14 @@ def signup() -> Tuple[Response, int]:
             return jsonify({"success": False, "error": "Email is already registered."}), 409
 
     try:
+        # Determine role (admin if first user)
+        role = "admin" if User.query.count() == 0 else "user"
+
         # Create user
         new_user = User(
             username=username,
             email=email,
+            role=role,
             password_hash=hash_password(password),
             is_active=True,
             is_verified=True,
@@ -135,6 +139,7 @@ def signup() -> Tuple[Response, int]:
                 "id": str(new_user.id),
                 "username": new_user.username,
                 "email": new_user.email,
+                "role": new_user.role,
                 "created_at": new_user.created_at.isoformat() if new_user.created_at else None,
             }
         }), 201
@@ -218,6 +223,7 @@ def login() -> Tuple[Response, int]:
                 "id": str(user.id),
                 "username": user.username,
                 "email": user.email,
+                "role": user.role,
                 "created_at": user.created_at.isoformat() if user.created_at else None,
             }
         }), 200
@@ -352,6 +358,7 @@ def me() -> Tuple[Response, int]:
             "id": str(user.id),
             "username": user.username,
             "email": user.email,
+            "role": user.role,
             "created_at": user.created_at.isoformat() if user.created_at else None,
         }
     }), 200

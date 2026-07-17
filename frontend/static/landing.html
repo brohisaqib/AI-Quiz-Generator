@@ -1,0 +1,454 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuizAI - Advanced AI Quiz Generation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Manrope:wght@100..900&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                "on-secondary-fixed": "#001a42",
+                "on-primary-fixed": "#23005c",
+                "on-tertiary-container": "#2a2a29",
+                "surface-container-highest": "#2e353f",
+                "outline": "#958ea0",
+                "on-primary-fixed-variant": "#5516be",
+                "surface": "#0d141d",
+                "surface-container": "#192029",
+                "background": "#0d141d",
+                "on-tertiary-fixed": "#1c1b1b",
+                "surface-variant": "#2e353f",
+                "on-background": "#dce3f0",
+                "on-secondary-fixed-variant": "#004395",
+                "tertiary-fixed-dim": "#c8c6c5",
+                "secondary-fixed-dim": "#adc6ff",
+                "surface-dim": "#0d141d",
+                "secondary": "#adc6ff",
+                "error-container": "#93000a",
+                "inverse-primary": "#6d3bd7",
+                "primary-fixed-dim": "#d0bcff",
+                "on-error": "#690005",
+                "on-tertiary-fixed-variant": "#474646",
+                "on-secondary-container": "#e6ecff",
+                "tertiary-fixed": "#e5e2e1",
+                "secondary-fixed": "#d8e2ff",
+                "surface-container-high": "#232a34",
+                "surface-container-low": "#151c25",
+                "inverse-on-surface": "#2a313b",
+                "on-primary-container": "#340080",
+                "primary": "#d0bcff",
+                "on-tertiary": "#313030",
+                "tertiary": "#c8c6c5",
+                "on-primary": "#3c0091",
+                "surface-container-lowest": "#080f17",
+                "secondary-container": "#0566d9",
+                "on-error-container": "#ffdad6",
+                "surface-bright": "#333a44",
+                "on-surface-variant": "#cbc3d7",
+                "on-secondary": "#002e6a",
+                "primary-fixed": "#e9ddff",
+                "surface-tint": "#d0bcff",
+                "on-surface": "#dce3f0",
+                "inverse-surface": "#dce3f0",
+                "error": "#ffb4ab",
+                "primary-container": "#a078ff",
+                "outline-variant": "#494454",
+                "tertiary-container": "#929090"
+              },
+              "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+              },
+              "spacing": {
+                "margin-mobile": "20px",
+                "gutter": "24px",
+                "section-gap": "120px",
+                "stack-md": "16px",
+                "container-max": "1200px",
+                "stack-sm": "8px",
+                "stack-lg": "32px"
+              },
+              "fontFamily": {
+                "body-md": ["Inter"],
+                "label-sm": ["Inter"],
+                "display-lg-mobile": ["Manrope"],
+                "headline-md": ["Manrope"],
+                "display-lg": ["Manrope"],
+                "headline-sm": ["Manrope"],
+                "body-lg": ["Inter"],
+                "label-md": ["Inter"]
+              },
+              "fontSize": {
+                "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                "label-sm": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                "display-lg-mobile": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                "headline-md": ["32px", {"lineHeight": "1.3", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "display-lg": ["64px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "800"}],
+                "headline-sm": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.02em", "fontWeight": "500"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        html { scroll-behavior: smooth; }
+        html, body {
+            max-width: 100vw;
+            overflow-x: hidden;
+        }
+        body {
+            background-color: #0a0a0a;
+            color: #dce3f0;
+        }
+        .glass-card {
+            background: rgba(17, 17, 17, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #d0bcff 0%, #adc6ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .glow-orb {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(120px);
+            z-index: -1;
+            opacity: 0.15;
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #a078ff 0%, #0566d9 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-gradient:hover {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+            transform: translateY(-1px);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .step-line::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: -50%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, #a078ff, transparent);
+            z-index: -1;
+        }
+        @media (max-width: 768px) {
+            .step-line::after { display: none; }
+        }
+    </style>
+</head>
+<body class="font-body-md antialiased overflow-x-hidden">
+
+<!-- Mobile Navigation Menu (Hidden by default) -->
+<div class="fixed inset-0 z-[100] bg-surface flex flex-col items-center justify-center translate-x-full transition-transform duration-300 md:hidden" id="mobile-menu">
+<button class="absolute top-6 right-margin-mobile text-on-surface" id="close-menu">
+<span class="material-symbols-outlined text-[32px]">close</span>
+</button>
+<nav class="flex flex-col gap-stack-lg items-center text-center">
+<a class="font-headline-sm text-headline-sm text-on-surface mobile-nav-link" href="#features">Features</a>
+<a class="font-headline-sm text-headline-sm text-on-surface mobile-nav-link" href="#how-it-works">How It Works</a>
+<a class="font-headline-sm text-headline-sm text-primary" href="/app">Log In</a>
+<a class="px-stack-lg py-4 btn-gradient text-white font-bold rounded-lg shadow-lg" href="/app">Sign Up</a>
+</nav>
+</div>
+
+<!-- Atmospheric Glows -->
+<div class="glow-orb bg-primary top-[-10%] left-[-10%]"></div>
+<div class="glow-orb bg-secondary bottom-[20%] right-[-10%]"></div>
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl border-b border-white/5 shadow-sm">
+<div class="max-w-container-max mx-auto px-margin-mobile md:px-gutter flex justify-between items-center h-20">
+<div class="flex items-center gap-stack-sm">
+<img alt="QuizAI Logo" class="h-10 w-10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5rqy_6aLpwDeggfg6wM6GN4VVEfqYIZE7pth2AvvVDssLN1fOhXj73xiw1EFhN8DkqAucAflDm6Gl3fbaU7xPeROtVbbQzQduwARvl6o5qsto6GpnGTrPV1haGG7WDIr27QKHdfdqY6AB8C-gWel7BHuZ1oAQR6mJl5qqA0wxwdCVwCzjJQ-gYe__av6DtKEolltPny3wPp5yhjZHSwbHbrTD0ipORh1UcFH5vJ4vg5YAe4bxpCNeGZzViHfcrheRuzsEvAXFKUw">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface tracking-tight">QuizAI</span>
+</div>
+<div class="hidden md:flex items-center gap-stack-lg">
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 font-body-md text-body-md" href="#features">Features</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 font-body-md text-body-md" href="#how-it-works">How It Works</a>
+</div>
+<div class="flex items-center gap-stack-md">
+<button class="hidden md:block text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 scale-95 active:scale-90 font-body-md text-body-md" onclick="window.location.href='/app'">Log In</button>
+<button class="hidden md:block btn-gradient px-6 py-2.5 rounded-lg text-white font-bold scale-95 active:scale-90 transition-transform font-body-md text-body-md" onclick="window.location.href='/app'">Sign Up</button>
+<button class="md:hidden text-on-surface ml-4" id="hamburger">
+<span class="material-symbols-outlined text-[32px]">menu</span>
+</button>
+</div>
+</div>
+</nav>
+<main>
+<!-- Hero Section -->
+<section class="relative pt-40 pb-section-gap overflow-hidden">
+<div class="max-w-container-max mx-auto px-margin-mobile md:px-gutter grid lg:grid-cols-2 gap-16 items-center">
+<div class="space-y-stack-lg">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px]">bolt</span>
+                        NEW: AI Quality Scoring v2.0
+                    </div>
+<h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface leading-tight">
+                        Turn Any Content Into a <span class="gradient-text">Quiz in Minutes</span>
+</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+                        Upload a video, a PDF, or just type a topic — get an AI-generated quiz with a built-in quality score, instantly.
+                    </p>
+<div class="flex flex-wrap gap-stack-md pt-4">
+<button class="btn-gradient px-8 py-4 rounded-lg text-white font-bold text-body-lg w-full md:w-auto" onclick="window.location.href='/app'">Get Started Free</button>
+<button class="bg-transparent border border-white/20 px-8 py-4 rounded-lg text-white font-bold hover:bg-white/5 transition-colors text-body-lg flex items-center justify-center gap-2 w-full md:w-auto" onclick="document.getElementById('how-it-works').scrollIntoView({behavior: 'smooth'})">
+<span class="material-symbols-outlined">play_circle</span>
+                            See How It Works
+                        </button>
+</div>
+</div>
+<!-- Hero Visual (Mockup) -->
+<div class="relative">
+<div class="glass-card p-8 rounded-2xl shadow-2xl relative z-10">
+<div class="flex flex-col sm:flex-row justify-between items-start mb-6 gap-4 sm:gap-0">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Modern Architecture Quiz</h3>
+<p class="text-on-surface-variant text-sm">Generated from: "Introduction to Bauhaus.pdf"</p>
+</div>
+<div class="bg-secondary/10 border border-secondary/30 px-3 py-1 rounded-lg">
+<span class="text-secondary font-bold">8.5/10</span>
+<span class="text-secondary/60 text-[10px] block">Quality Score</span>
+</div>
+</div>
+<div class="space-y-4">
+<div class="p-4 rounded-xl bg-white/5 border border-white/5">
+<p class="text-on-surface mb-3">Which of the following is a primary characteristic of Bauhaus design?</p>
+<div class="space-y-2">
+<div class="p-3 rounded-lg border border-primary/40 bg-primary/5 flex items-center justify-between">
+<span class="text-sm">Form follows function</span>
+<span class="material-symbols-outlined text-primary text-sm">check_circle</span>
+</div>
+<div class="p-3 rounded-lg border border-white/5 bg-white/5 text-sm">Ornate ornamentation</div>
+<div class="p-3 rounded-lg border border-white/5 bg-white/5 text-sm">Strictly classical themes</div>
+</div>
+</div>
+</div>
+<!-- Atmospheric Glow on Mockup -->
+<div class="absolute -top-10 -right-10 w-40 h-40 bg-primary/20 blur-[60px] rounded-full"></div>
+</div>
+<!-- Decorative back layers -->
+<div class="absolute top-4 left-4 w-full h-full glass-card rounded-2xl -z-10 translate-x-4 translate-y-4 opacity-40"></div>
+</div>
+</div>
+</section>
+<!-- 'Three Ways to Generate' Section -->
+<section class="py-section-gap bg-surface-container-low/30">
+<div class="max-w-container-max mx-auto px-margin-mobile md:px-gutter">
+<div class="text-center mb-16">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-4">Three Ways to Generate</h2>
+<p class="text-on-surface-variant max-w-2xl mx-auto">No matter the format, our AI engine handles the heavy lifting so you can focus on learning.</p>
+</div>
+<div class="grid md:grid-cols-3 gap-8">
+<!-- From Video -->
+<div class="glass-card p-8 rounded-2xl group hover:border-primary/30 transition-all duration-300">
+<div class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6 text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-4xl">movie</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-3">From Video</h4>
+<p class="text-on-surface-variant">Paste a YouTube link or upload an MP4. We transcribe and extract the core concepts automatically.</p>
+</div>
+<!-- From PDF -->
+<div class="glass-card p-8 rounded-2xl group hover:border-secondary/30 transition-all duration-300">
+<div class="w-14 h-14 rounded-xl bg-secondary/10 flex items-center justify-center mb-6 text-secondary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-4xl">description</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-3">From PDF</h4>
+<p class="text-on-surface-variant">Upload research papers, textbooks, or notes. Our engine parses complex documents with ease.</p>
+</div>
+<!-- From a Topic -->
+<div class="glass-card p-8 rounded-2xl group hover:border-primary/30 transition-all duration-300">
+<div class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6 text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-4xl">edit_note</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-3">From a Topic</h4>
+<p class="text-on-surface-variant">Just type a subject. Whether it's "Quantum Physics" or "Baking 101", we generate relevant content.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- 'How It Works' Section -->
+<section class="py-section-gap relative" id="how-it-works">
+<div class="max-w-container-max mx-auto px-margin-mobile md:px-gutter">
+<div class="text-center mb-20">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-4">The Intelligent Pipeline</h2>
+<p class="text-on-surface-variant">From raw input to a high-quality quiz in five automated steps.</p>
+</div>
+<div class="flex flex-col md:flex-row justify-between gap-stack-lg relative">
+<!-- Step 1 -->
+<div class="flex-1 text-center relative step-line">
+<div class="w-16 h-16 rounded-full glass-card flex items-center justify-center mx-auto mb-6 border-2 border-primary/40 text-primary">
+<span class="font-bold">1</span>
+</div>
+<h5 class="font-bold text-on-surface mb-2">Input</h5>
+<p class="text-on-surface-variant text-sm px-4">Upload your files or paste a link</p>
+</div>
+<!-- Step 2 -->
+<div class="flex-1 text-center relative step-line">
+<div class="w-16 h-16 rounded-full glass-card flex items-center justify-center mx-auto mb-6 border-2 border-white/10 text-on-surface">
+<span class="font-bold">2</span>
+</div>
+<h5 class="font-bold text-on-surface mb-2">Transcribe</h5>
+<p class="text-on-surface-variant text-sm px-4">AI converts audio/video to text</p>
+</div>
+<!-- Step 3 -->
+<div class="flex-1 text-center relative step-line">
+<div class="w-16 h-16 rounded-full glass-card flex items-center justify-center mx-auto mb-6 border-2 border-white/10 text-on-surface">
+<span class="font-bold">3</span>
+</div>
+<h5 class="font-bold text-on-surface mb-2">Summarize</h5>
+<p class="text-on-surface-variant text-sm px-4">Core concepts are identified</p>
+</div>
+<!-- Step 4 -->
+<div class="flex-1 text-center relative step-line">
+<div class="w-16 h-16 rounded-full glass-card flex items-center justify-center mx-auto mb-6 border-2 border-white/10 text-on-surface">
+<span class="font-bold">4</span>
+</div>
+<h5 class="font-bold text-on-surface mb-2">Generate</h5>
+<p class="text-on-surface-variant text-sm px-4">Multiple-choice quiz is built</p>
+</div>
+<!-- Step 5 -->
+<div class="flex-1 text-center relative">
+<div class="w-16 h-16 rounded-full glass-card flex items-center justify-center mx-auto mb-6 border-2 border-secondary/40 text-secondary">
+<span class="font-bold">5</span>
+</div>
+<h5 class="font-bold text-on-surface mb-2">Score</h5>
+<p class="text-on-surface-variant text-sm px-4">Quality check ensures accuracy</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Features Grid Section -->
+<section class="py-section-gap" id="features">
+<div class="max-w-container-max mx-auto px-margin-mobile md:px-gutter">
+<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-stack-lg">
+<!-- F1 -->
+<div class="glass-card p-8 rounded-2xl border-t-2 border-t-primary/20">
+<span class="material-symbols-outlined text-primary mb-4 text-3xl">shield</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-2">Secure Account</h4>
+<p class="text-on-surface-variant font-body-md">Your data is encrypted and private. We never use your content to train public models.</p>
+</div>
+<!-- F2 -->
+<div class="glass-card p-8 rounded-2xl">
+<span class="material-symbols-outlined text-primary mb-4 text-3xl">psychology</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-2">AI Generation</h4>
+<p class="text-on-surface-variant font-body-md">Powered by the latest GPT-4o architecture for human-like reasoning and nuance.</p>
+</div>
+<!-- F3 -->
+<div class="glass-card p-8 rounded-2xl">
+<span class="material-symbols-outlined text-secondary mb-4 text-3xl">verified</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-2">Quality Evaluation</h4>
+<p class="text-on-surface-variant font-body-md">Unique scoring engine detects hallucinations and ensures educational validity.</p>
+</div>
+<!-- F4 -->
+<div class="glass-card p-8 rounded-2xl">
+<span class="material-symbols-outlined text-primary mb-4 text-3xl">history</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-2">History</h4>
+<p class="text-on-surface-variant font-body-md">Access your entire quiz history anytime. Organize quizzes into custom collections.</p>
+</div>
+<!-- F5 -->
+<div class="glass-card p-8 rounded-2xl">
+<span class="material-symbols-outlined text-primary mb-4 text-3xl">file_present</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-2">Universal Support</h4>
+<p class="text-on-surface-variant font-body-md">Seamlessly switch between YouTube videos, PDF documents, and raw text inputs.</p>
+</div>
+<!-- F6 -->
+<div class="glass-card p-8 rounded-2xl">
+<span class="material-symbols-outlined text-secondary mb-4 text-3xl">speed</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-2">Fast/Free Engine</h4>
+<p class="text-on-surface-variant font-body-md">Generate quizzes in seconds. Start with our generous free tier and upgrade as you grow.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Final CTA Section -->
+<section class="py-section-gap relative">
+<div class="absolute inset-0 z-0">
+
+</div>
+<div class="max-w-container-max mx-auto px-margin-mobile md:px-gutter relative z-10 text-center">
+<div class="glass-card p-8 md:p-20 rounded-3xl overflow-hidden relative">
+<h2 class="font-display-lg text-display-lg-mobile md:text-headline-md text-on-surface mb-6">Ready to turn content into knowledge?</h2>
+<p class="text-on-surface-variant text-body-lg mb-10 max-w-xl mx-auto">Join thousands of educators and learners using QuizAI to master their materials.</p>
+<button class="btn-gradient px-12 py-5 rounded-xl text-white font-bold text-headline-sm scale-100 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto" onclick="window.location.href='/app'">Sign Up Free</button>
+<!-- Decorative shapes -->
+<div class="absolute -bottom-10 -left-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl"></div>
+<div class="absolute -top-10 -right-10 w-32 h-32 bg-secondary/20 rounded-full blur-3xl"></div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface border-t border-white/5 py-stack-lg">
+<div class="max-w-container-max mx-auto px-margin-mobile md:px-gutter flex flex-col md:flex-row justify-between items-center gap-stack-md">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">QuizAI</span>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant text-center md:text-left">
+                © 2024 AI Quiz Generator. Technical Sophistication Guaranteed.
+            </p>
+<div class="flex gap-stack-lg">
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors font-label-md text-label-md" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors font-label-md text-label-md" href="#">Terms of Service</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors font-label-md text-label-md" href="#">Contact</a>
+</div>
+</div>
+</footer>
+<script>
+        // Intersection Observer for fade-in effects
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                    entry.target.classList.remove('opacity-0', 'translate-y-8');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('section').forEach(section => {
+            section.classList.add('transition-all', 'duration-700', 'opacity-0', 'translate-y-8');
+            observer.observe(section);
+        });
+    
+        const hamburger = document.getElementById('hamburger');
+        const closeMenu = document.getElementById('close-menu');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        if (hamburger && closeMenu && mobileMenu) {
+            hamburger.addEventListener('click', () => {
+                mobileMenu.classList.remove('translate-x-full');
+            });
+
+            closeMenu.addEventListener('click', () => {
+                mobileMenu.classList.add('translate-x-full');
+            });
+
+            document.querySelectorAll('.mobile-nav-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('translate-x-full');
+                });
+            });
+        }
+    </script>
+</body></html>

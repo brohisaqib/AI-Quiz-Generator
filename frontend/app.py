@@ -2,7 +2,7 @@ import os
 import logging
 import sys
 from pathlib import Path
-from flask import Flask, send_from_directory, jsonify
+from flask import Flask, send_from_directory, jsonify, redirect, request
 from dotenv import load_dotenv
 
 # Resolve the absolute path to the root .env relative to this file
@@ -26,9 +26,20 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:5000")
 logger.info(f"Configured BACKEND_URL: {BACKEND_URL}")
 
 @app.route("/")
+def landing():
+    """Serve landing.html as the primary landing page."""
+    return send_from_directory(app.static_folder, "landing.html")
+
+@app.route("/app")
 def index():
-    """Serve index.html as the primary landing page."""
+    """Serve index.html for the main app."""
     return send_from_directory(app.static_folder, "index.html")
+
+@app.route("/reset-password")
+def reset_password_redirect():
+    """Redirect reset password route to main app with token."""
+    token = request.args.get("token", "")
+    return redirect(f"/app?token={token}")
 
 @app.route("/config")
 def get_config():

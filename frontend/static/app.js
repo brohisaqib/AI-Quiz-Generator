@@ -1,4 +1,4 @@
-let BACKEND_URL = "http://127.0.0.1:5000";
+let BACKEND_URL = `${window.location.protocol}//${window.location.hostname}:5000`;
 let currentUser = null;
 let currentQuiz = null;
 let userAnswers = {};
@@ -6,9 +6,11 @@ let activeQuizTab = "take";
 
 // Initialize App
 document.addEventListener("DOMContentLoaded", async () => {
+    initializeTheme();
     await fetchConfig();
     setupEventListeners();
-    checkAuthSession();
+    await checkAuthSession();
+    checkPasswordResetToken();
 });
 
 // Fetch configuration from the frontend server
@@ -17,7 +19,9 @@ async function fetchConfig() {
         const response = await fetch("/config");
         if (response.ok) {
             const data = await response.json();
-            if (data.BACKEND_URL) {
+            // Only override BACKEND_URL if the config provides a distinct value 
+            // other than the default 127.0.0.1/localhost, ensuring LAN access works.
+            if (data.BACKEND_URL && !data.BACKEND_URL.includes("127.0.0.1")) {
                 BACKEND_URL = data.BACKEND_URL.replace(/\/$/, "");
             }
         }
@@ -52,6 +56,12 @@ function setupEventListeners() {
     // Logout
     document.getElementById("logout-btn").addEventListener("click", handleLogout);
 
+    // Theme toggle
+    const themeToggleBtn = document.getElementById("theme-toggle-btn");
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener("click", toggleTheme);
+    }
+
     // Video upload drag-and-drop
     setupDragAndDrop("video");
 
@@ -60,6 +70,9 @@ function setupEventListeners() {
 
     // Topic quiz form
     document.getElementById("topic-quiz-form").addEventListener("submit", handleGenerateTopicQuiz);
+
+    // YouTube quiz form
+    document.getElementById("youtube-quiz-form").addEventListener("submit", handleGenerateYoutubeQuiz);
 
     // Active Quiz Tabs
     document.getElementById("quiz-tab-take").addEventListener("click", () => switchQuizTab("take"));
@@ -72,6 +85,56 @@ function setupEventListeners() {
 
     // Download Quiz JSON
     document.getElementById("btn-download-json").addEventListener("click", downloadQuizJSON);
+
+    // Forgot Password & Reset Password event listeners
+    const forgotBtn = document.getElementById("login-forgot-password-btn");
+    if (forgotBtn) {
+        forgotBtn.addEventListener("click", showForgotPasswordForm);
+    }
+    const backToLoginBtn1 = document.getElementById("forgot-back-to-login-btn");
+    if (backToLoginBtn1) {
+        backToLoginBtn1.addEventListener("click", showLoginFormFromAuth);
+    }
+    const backToLoginBtn2 = document.getElementById("reset-back-to-login-btn");
+    if (backToLoginBtn2) {
+        backToLoginBtn2.addEventListener("click", showLoginFormFromAuth);
+    }
+    const forgotForm = document.getElementById("forgot-password-form");
+    if (forgotForm) {
+        forgotForm.addEventListener("submit", handleForgotPasswordSubmit);
+    }
+    const resetForm = document.getElementById("reset-password-form");
+    if (resetForm) {
+        resetForm.addEventListener("submit", handleResetPasswordSubmit);
+    }
+}
+
+function initializeTheme() {
+    const savedTheme = localStorage.getItem("dashboardTheme") || "dark";
+    applyTheme(savedTheme === "light" ? "light" : "dark");
+}
+
+function applyTheme(theme) {
+    const normalizedTheme = theme === "light" ? "light" : "dark";
+    document.body.setAttribute("data-theme", normalizedTheme);
+    localStorage.setItem("dashboardTheme", normalizedTheme);
+
+    const icon = document.getElementById("theme-toggle-icon");
+    const button = document.getElementById("theme-toggle-btn");
+    const isLight = normalizedTheme === "light";
+
+    if (icon) {
+        icon.textContent = isLight ? "dark_mode" : "light_mode";
+    }
+    if (button) {
+        button.setAttribute("aria-label", isLight ? "Switch to dark theme" : "Switch to light theme");
+        button.setAttribute("title", isLight ? "Switch to dark theme" : "Switch to light theme");
+    }
+}
+
+function toggleTheme() {
+    const currentTheme = document.body.getAttribute("data-theme") || "dark";
+    applyTheme(currentTheme === "light" ? "dark" : "light");
 }
 
 // Check if user session exists in localStorage
@@ -252,12 +315,25 @@ async function loadUserProfile() {
             const data = await response.json();
             currentUser = data.user;
             document.getElementById("user-display-name").textContent = currentUser.username;
+            updateAdminNavVisibility(currentUser);
             return true;
         }
     } catch (e) {
         console.error("Load user profile failed:", e);
     }
     return false;
+}
+
+// Single authoritative function that controls nav-admin visibility.
+// Call this after every place currentUser is set or updated.
+function updateAdminNavVisibility(user) {
+    const adminNav = document.getElementById("nav-admin");
+    if (!adminNav) return;
+    if (user && user.role === "admin") {
+        adminNav.classList.remove("hidden");
+    } else {
+        adminNav.classList.add("hidden");
+    }
 }
 
 // Login Submit Handler
@@ -286,6 +362,8 @@ async function handleLogin(e) {
             hideAuthShowApp();
             checkBackendHealth();
             loadDashboardStats();
+            // MUST run after hideAuthShowApp() (which calls switchView → resets classNames)
+            updateAdminNavVisibility(currentUser);
         } else {
             showToast("Login Failed", data.error || "Invalid username or password.", true);
         }
@@ -327,6 +405,8 @@ async function handleSignup(e) {
             hideAuthShowApp();
             checkBackendHealth();
             loadDashboardStats();
+            // MUST run after hideAuthShowApp() (which calls switchView → resets classNames)
+            updateAdminNavVisibility(currentUser);
         } else {
             showToast("Registration Failed", data.error || "Please verify your input fields.", true);
         }
@@ -353,7 +433,7 @@ async function handleLogout() {
 
 // Switch between dashboard sections
 function switchView(pageId) {
-    const sections = ["home", "video", "pdf", "topic", "library", "quiz"];
+    const sections = ["home", "video", "pdf", "topic", "youtube", "library", "quiz", "admin"];
     sections.forEach(sec => {
         const el = document.getElementById(`view-${sec}`);
         if (el) {
@@ -365,8 +445,9 @@ function switchView(pageId) {
         }
     });
 
-    // Update active nav button
+    // Update active nav button — skip nav-admin so its hidden class is never stripped here
     document.querySelectorAll("#sidebar-nav button").forEach(btn => {
+        if (btn.id === "nav-admin") return; // nav-admin visibility is managed solely by updateAdminNavVisibility()
         const page = btn.getAttribute("data-page");
         if (page === pageId) {
             btn.className = "w-full flex items-center gap-4 px-4 py-3 rounded-xl text-primary font-bold border-r-2 border-primary bg-primary/10 transition-all duration-300";
@@ -374,6 +455,8 @@ function switchView(pageId) {
             btn.className = "w-full flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant/70 font-medium hover:bg-white/5 hover:text-primary transition-all duration-300";
         }
     });
+    // Re-apply admin nav visibility after className reset (guards against future additions)
+    updateAdminNavVisibility(currentUser);
 
     // Update breadcrumb
     const pageTitles = {
@@ -381,8 +464,10 @@ function switchView(pageId) {
         video: "Video to Quiz",
         pdf: "PDF to Quiz",
         topic: "Topic to Quiz",
+        youtube: "YouTube to Quiz",
         library: "My Quizzes",
-        quiz: "Interactive Quiz Player"
+        quiz: "Interactive Quiz Player",
+        admin: "Admin Panel"
     };
 
     document.getElementById("breadcrumb-current").textContent = pageTitles[pageId] || "Home";
@@ -392,6 +477,8 @@ function switchView(pageId) {
         loadUserLibrary();
     } else if (pageId === "home") {
         loadDashboardStats();
+    } else if (pageId === "admin") {
+        loadAdminData();
     }
 }
 
@@ -684,6 +771,41 @@ async function handleGenerateTopicQuiz(e) {
     }
 }
 
+// Generate Quiz from YouTube URL
+async function handleGenerateYoutubeQuiz(e) {
+    e.preventDefault();
+    const youtubeUrl = document.getElementById("youtube-url-input").value.trim();
+    const progressDiv = document.getElementById("youtube-progress");
+    const btnGenerate = document.getElementById("btn-generate-youtube-quiz");
+
+    if (!youtubeUrl) return;
+
+    progressDiv.classList.remove("hidden");
+    btnGenerate.disabled = true;
+
+    try {
+        const response = await apiCall("/generate-quiz-from-youtube", {
+            method: "POST",
+            body: JSON.stringify({ youtube_url: youtubeUrl })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            showToast("Quiz Generated", "YouTube audio processed and quiz generated successfully!");
+            document.getElementById("youtube-url-input").value = "";
+            loadQuizIntoPlayer(data);
+        } else {
+            throw new Error(data.error || "YouTube pipeline failed.");
+        }
+    } catch (e) {
+        console.error(e);
+        showToast("Generation Failed", e.message || "YouTube URL processing failed.", true);
+    } finally {
+        progressDiv.classList.add("hidden");
+        btnGenerate.disabled = false;
+    }
+}
+
 // Load dynamic user library in My Quizzes view
 async function loadUserLibrary() {
     const container = document.getElementById("library-container");
@@ -717,6 +839,9 @@ async function loadUserLibrary() {
                 } else if (quiz.source_type === "pdf") {
                     sourceIcon = "picture_as_pdf";
                     sourceText = "PDF Material";
+                } else if (quiz.source_type === "youtube") {
+                    sourceIcon = "play_circle";
+                    sourceText = "YouTube Video";
                 }
 
                 const createdDate = quiz.created_at ? new Date(quiz.created_at).toLocaleDateString(undefined, {
@@ -1023,3 +1148,261 @@ function escapeHtml(str) {
          .replace(/"/g, "&quot;")
          .replace(/'/g, "&#039;");
 }
+
+// --- ADMIN FUNCTIONS ---
+
+function switchAdminTab(tab) {
+    const usersBtn = document.getElementById("admin-tab-users-btn");
+    const quizzesBtn = document.getElementById("admin-tab-quizzes-btn");
+    const usersList = document.getElementById("admin-users-list");
+    const quizzesList = document.getElementById("admin-quizzes-list");
+
+    if (tab === "users") {
+        usersBtn.className = "flex-grow py-3 text-center font-bold text-primary border-b-2 border-primary transition-all rounded-lg text-sm";
+        quizzesBtn.className = "flex-grow py-3 text-center font-semibold text-on-surface-variant hover:text-on-surface transition-all rounded-lg text-sm";
+        usersList.classList.remove("hidden");
+        quizzesList.classList.add("hidden");
+    } else {
+        quizzesBtn.className = "flex-grow py-3 text-center font-bold text-primary border-b-2 border-primary transition-all rounded-lg text-sm";
+        usersBtn.className = "flex-grow py-3 text-center font-semibold text-on-surface-variant hover:text-on-surface transition-all rounded-lg text-sm";
+        quizzesList.classList.remove("hidden");
+        usersList.classList.add("hidden");
+    }
+}
+
+async function loadAdminData() {
+    try {
+        const statsRes = await apiCall("/admin/stats");
+        if (statsRes.ok) {
+            const stats = await statsRes.json();
+            document.getElementById("admin-stat-users").textContent = stats.total_users;
+            document.getElementById("admin-stat-quizzes").textContent = stats.total_quizzes;
+            document.getElementById("admin-stat-eval").textContent = stats.average_evaluation_score;
+        }
+
+        const usersRes = await apiCall("/admin/users");
+        if (usersRes.ok) {
+            const data = await usersRes.json();
+            renderAdminUsers(data.users || []);
+        }
+
+        const quizzesRes = await apiCall("/admin/quizzes");
+        if (quizzesRes.ok) {
+            const data = await quizzesRes.json();
+            renderAdminQuizzes(data.quizzes || []);
+        }
+    } catch (e) {
+        console.error("Failed to load admin data:", e);
+        showToast("Error", "Could not load admin data.", true);
+    }
+}
+
+function renderAdminUsers(users) {
+    const container = document.getElementById("admin-users-list");
+    container.innerHTML = "";
+    
+    users.forEach(user => {
+        const div = document.createElement("div");
+        div.className = "glass-card rounded-xl p-4 border border-white/5 flex flex-col sm:flex-row justify-between sm:items-center gap-4";
+        
+        const createdDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : "N/A";
+        const roleBadge = user.role === 'admin' ? '<span class="bg-primary/20 text-primary px-2 py-0.5 rounded text-[10px] font-bold">ADMIN</span>' : '';
+        const statusBadge = user.is_active ? '<span class="bg-tertiary/20 text-tertiary px-2 py-0.5 rounded text-[10px] font-bold">ACTIVE</span>' : '<span class="bg-error/20 text-error px-2 py-0.5 rounded text-[10px] font-bold">INACTIVE</span>';
+        
+        const actionBtn = user.is_active 
+            ? `<button onclick="toggleUserStatus('${user.id}', true)" class="px-3 py-1.5 rounded-lg bg-error/10 text-error hover:bg-error/20 text-xs font-bold transition-all">Deactivate</button>`
+            : `<button onclick="toggleUserStatus('${user.id}', false)" class="px-3 py-1.5 rounded-lg bg-tertiary/10 text-tertiary hover:bg-tertiary/20 text-xs font-bold transition-all">Activate</button>`;
+        
+        div.innerHTML = `
+            <div>
+                <p class="font-bold text-white text-sm flex items-center gap-2">${escapeHtml(user.username)} ${roleBadge}</p>
+                <p class="text-xs text-on-surface-variant/70 mt-1">${escapeHtml(user.email)} • Joined: ${createdDate}</p>
+                <div class="mt-2">${statusBadge}</div>
+            </div>
+            <div>
+                ${user.id !== currentUser.id ? actionBtn : '<span class="text-xs text-on-surface-variant/50 italic">You</span>'}
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function renderAdminQuizzes(quizzes) {
+    const container = document.getElementById("admin-quizzes-list");
+    container.innerHTML = "";
+    
+    if (quizzes.length === 0) {
+        container.innerHTML = '<p class="text-sm text-on-surface-variant/60">No quizzes found.</p>';
+        return;
+    }
+    
+    quizzes.forEach(quiz => {
+        const div = document.createElement("div");
+        div.className = "glass-card rounded-xl p-4 border border-white/5 flex flex-col sm:flex-row justify-between sm:items-center gap-4";
+        
+        const createdDate = quiz.created_at ? new Date(quiz.created_at).toLocaleDateString() : "N/A";
+        
+        div.innerHTML = `
+            <div>
+                <p class="font-bold text-white text-sm">${escapeHtml(quiz.title)}</p>
+                <p class="text-xs text-on-surface-variant/70 mt-1">By: <span class="text-primary font-bold">${escapeHtml(quiz.username)}</span> • Source: ${escapeHtml(quiz.source_type)}</p>
+                <div class="flex gap-3 text-[10px] uppercase font-bold tracking-wider mt-2 text-on-surface-variant/60">
+                    <span>${quiz.question_count} Qs</span>
+                    <span>Eval: ${quiz.evaluation_score !== null ? quiz.evaluation_score : 'N/A'}</span>
+                    <span>${createdDate}</span>
+                </div>
+            </div>
+            <div>
+                <button onclick="playQuizFromLibrary('${quiz.id}')" class="px-3 py-1.5 rounded-lg bg-primary-container text-on-primary text-xs font-bold hover:brightness-110 transition-all flex items-center gap-1">
+                    <span class="material-symbols-outlined text-xs">visibility</span>
+                    <span>View</span>
+                </button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+async function toggleUserStatus(userId, isActive) {
+    const endpoint = isActive ? `/admin/users/${userId}/deactivate` : `/admin/users/${userId}/activate`;
+    try {
+        const response = await apiCall(endpoint, { method: "PATCH" });
+        if (response.ok) {
+            showToast("Success", `User ${isActive ? "deactivated" : "activated"} successfully.`);
+            loadAdminData();
+        } else {
+            const data = await response.json();
+            showToast("Error", data.error || "Failed to change user status.", true);
+        }
+    } catch (e) {
+        showToast("Error", "API request failed.", true);
+    }
+}
+
+let isResettingPassword = false;
+
+function checkPasswordResetToken() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    if (token) {
+        isResettingPassword = true;
+        
+        // Hide app shell, show auth container
+        document.getElementById("auth-container").classList.remove("hidden");
+        document.getElementById("app-shell").classList.add("hidden");
+        
+        // Hide tabs and all other auth forms
+        const tabsContainer = document.getElementById("auth-tabs-container");
+        if (tabsContainer) {
+            tabsContainer.classList.add("hidden");
+        }
+        document.getElementById("login-form").classList.add("hidden");
+        document.getElementById("signup-form").classList.add("hidden");
+        document.getElementById("forgot-password-form").classList.add("hidden");
+        
+        // Show reset password form
+        const resetForm = document.getElementById("reset-password-form");
+        if (resetForm) {
+            resetForm.classList.remove("hidden");
+        }
+        
+        // Put token in input
+        const tokenInput = document.getElementById("reset-token");
+        if (tokenInput) {
+            tokenInput.value = token;
+        }
+        
+        // Clean URL parameter so it doesn't linger
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
+
+function showForgotPasswordForm() {
+    const tabsContainer = document.getElementById("auth-tabs-container");
+    if (tabsContainer) {
+        tabsContainer.classList.add("hidden");
+    }
+    document.getElementById("login-form").classList.add("hidden");
+    document.getElementById("signup-form").classList.add("hidden");
+    document.getElementById("reset-password-form").classList.add("hidden");
+    document.getElementById("forgot-password-form").classList.remove("hidden");
+}
+
+function showLoginFormFromAuth() {
+    isResettingPassword = false;
+    const tabsContainer = document.getElementById("auth-tabs-container");
+    if (tabsContainer) {
+        tabsContainer.classList.remove("hidden");
+    }
+    document.getElementById("forgot-password-form").classList.add("hidden");
+    document.getElementById("reset-password-form").classList.add("hidden");
+    toggleAuthTab("login");
+}
+
+async function handleForgotPasswordSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById("forgot-email").value.trim();
+    if (!email) {
+        showToast("Validation Error", "Email is required.", true);
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${BACKEND_URL}/auth/forgot-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            showToast("Request Sent", data.message || "If that email is registered, a password reset link has been sent.");
+            document.getElementById("forgot-email").value = "";
+        } else {
+            showToast("Error", data.error || "An error occurred.", true);
+        }
+    } catch (err) {
+        console.error(err);
+        showToast("Connection Error", "Could not connect to the backend server.", true);
+    }
+}
+
+async function handleResetPasswordSubmit(e) {
+    e.preventDefault();
+    const token = document.getElementById("reset-token").value;
+    const new_password = document.getElementById("reset-new-password").value;
+    const confirm_password = document.getElementById("reset-confirm-password").value;
+    
+    if (!new_password || !confirm_password) {
+        showToast("Validation Error", "All fields are required.", true);
+        return;
+    }
+    if (new_password !== confirm_password) {
+        showToast("Validation Error", "Passwords do not match.", true);
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${BACKEND_URL}/auth/reset-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token, new_password })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            showToast("Password Reset Successful", data.message || "Your password has been reset successfully.");
+            document.getElementById("reset-new-password").value = "";
+            document.getElementById("reset-confirm-password").value = "";
+            document.getElementById("reset-token").value = "";
+            // Redirect to login after short delay
+            setTimeout(() => {
+                showLoginFormFromAuth();
+            }, 2500);
+        } else {
+            showToast("Error", data.error || "An error occurred.", true);
+        }
+    } catch (err) {
+        console.error(err);
+        showToast("Connection Error", "Could not connect to the backend server.", true);
+    }
+}
+

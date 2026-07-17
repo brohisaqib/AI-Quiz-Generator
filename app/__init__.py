@@ -1,10 +1,13 @@
 import os
 from flask import Flask, jsonify
 from flask_cors import CORS
+from flask_mail import Mail
 from app.config.settings import Config
 from app.utils.logger import get_logger
 
 logger = get_logger("app_factory")
+mail = Mail()
+
 
 def create_app(config_class=Config) -> Flask:
     """
@@ -42,6 +45,10 @@ def create_app(config_class=Config) -> Flask:
     db.init_app(app)
     migrate.init_app(app, db)
     
+    # Initialize Flask-Mail
+    mail.init_app(app)
+
+    
     # Initialize rate limiter
     from app.api.auth_routes import limiter
     limiter.init_app(app)
@@ -60,6 +67,13 @@ def create_app(config_class=Config) -> Flask:
 
     from app.api.auth_routes import auth_bp
     app.register_blueprint(auth_bp)
+    
+    from app.api.admin_routes import admin_bp
+    app.register_blueprint(admin_bp)
+
+    from app.api.password_reset_routes import password_reset_bp
+    app.register_blueprint(password_reset_bp)
+
     
     # 8. Global Error Handlers
     @app.errorhandler(413)

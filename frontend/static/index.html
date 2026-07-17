@@ -105,7 +105,7 @@
     </div>
 
     <!-- Notification Toast -->
-    <div id="toast" class="fixed top-gutter right-gutter z-[100] max-w-sm w-full bg-surface-container-high/90 backdrop-blur-md border border-white/10 rounded-xl p-4 shadow-2xl transition-all duration-300 transform translate-x-full opacity-0 pointer-events-none">
+    <div id="toast" class="fixed top-4 left-4 right-4 sm:left-auto sm:top-gutter sm:right-gutter z-[100] max-w-full sm:max-w-sm w-auto sm:w-full bg-surface-container-high/90 backdrop-blur-md border border-white/10 rounded-xl p-4 shadow-2xl transition-all duration-300 transform translate-x-full opacity-0 pointer-events-none">
         <div class="flex items-start gap-3">
             <span id="toast-icon" class="material-symbols-outlined text-primary">info</span>
             <div class="flex-grow">
@@ -119,8 +119,8 @@
     <!-- MAIN APP STRUCTURE -->
     
     <!-- 1. LOGIN/SIGN UP PAGE CONTAINER -->
-    <div id="auth-container" class="w-full flex items-center justify-center p-gutter min-h-screen">
-        <div class="w-full max-w-[440px] glass-card rounded-[24px] p-8 shadow-2xl relative overflow-hidden">
+    <div id="auth-container" class="w-full flex items-center justify-center p-4 sm:p-gutter min-h-screen">
+        <div class="w-full max-w-[440px] glass-card rounded-[24px] p-6 sm:p-8 shadow-2xl relative overflow-hidden">
             <div class="flex items-center gap-3 justify-center mb-6">
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg active-glow">
                     <span class="material-symbols-outlined text-on-primary">psychology</span>
@@ -129,7 +129,7 @@
             </div>
 
             <!-- Tabs -->
-            <div class="flex border-b border-white/10 mb-6">
+            <div id="auth-tabs-container" class="flex border-b border-white/10 mb-6">
                 <button id="tab-login-btn" class="flex-1 pb-3 text-center border-b-2 border-primary font-bold text-primary transition-all duration-300">🔑 Login</button>
                 <button id="tab-signup-btn" class="flex-1 pb-3 text-center border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all duration-300">📝 Sign Up</button>
             </div>
@@ -143,12 +143,59 @@
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Password</label>
                     <input type="password" id="login-password" required class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface placeholder-on-surface-variant/40" placeholder="Enter password">
+                    <div class="text-right mt-1.5">
+                        <button type="button" id="login-forgot-password-btn" class="text-xs text-primary hover:underline transition-all">Forgot password?</button>
+                    </div>
                 </div>
                 <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-primary-container to-secondary-container text-on-primary font-bold shadow-lg hover:brightness-110 hover:shadow-primary/20 transition-all active:scale-[0.98] mt-2 flex items-center justify-center gap-2">
                     <span>Log In</span>
                     <span class="material-symbols-outlined text-sm">login</span>
                 </button>
             </form>
+
+            <!-- Forgot Password Form (Hidden initially) -->
+            <form id="forgot-password-form" class="space-y-4 hidden">
+                <div class="mb-2">
+                    <h2 class="text-lg font-bold text-on-surface">Reset Password</h2>
+                    <p class="text-xs text-on-surface-variant/70">Enter your email and we'll send you a password reset link.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Email Address</label>
+                    <input type="email" id="forgot-email" required class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface placeholder-on-surface-variant/40" placeholder="yourname@example.com">
+                </div>
+                <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-primary-container to-secondary-container text-on-primary font-bold shadow-lg hover:brightness-110 hover:shadow-primary/20 transition-all active:scale-[0.98] mt-2 flex items-center justify-center gap-2">
+                    <span>Send Reset Link</span>
+                    <span class="material-symbols-outlined text-sm">mail</span>
+                </button>
+                <div class="text-center mt-4">
+                    <button type="button" id="forgot-back-to-login-btn" class="text-xs text-primary hover:underline transition-all">← Back to Login</button>
+                </div>
+            </form>
+
+            <!-- Reset Password Form (Hidden initially) -->
+            <form id="reset-password-form" class="space-y-4 hidden">
+                <div class="mb-2">
+                    <h2 class="text-lg font-bold text-on-surface">Set New Password</h2>
+                    <p class="text-xs text-on-surface-variant/70">Please choose a strong password for your account.</p>
+                </div>
+                <input type="hidden" id="reset-token">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">New Password</label>
+                    <input type="password" id="reset-new-password" required class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface placeholder-on-surface-variant/40" placeholder="Enter new password">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Confirm Password</label>
+                    <input type="password" id="reset-confirm-password" required class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface placeholder-on-surface-variant/40" placeholder="Repeat new password">
+                </div>
+                <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-primary-container to-secondary-container text-on-primary font-bold shadow-lg hover:brightness-110 hover:shadow-primary/20 transition-all active:scale-[0.98] mt-2 flex items-center justify-center gap-2">
+                    <span>Reset Password</span>
+                    <span class="material-symbols-outlined text-sm">lock_reset</span>
+                </button>
+                <div class="text-center mt-4">
+                    <button type="button" id="reset-back-to-login-btn" class="text-xs text-primary hover:underline transition-all">← Cancel & Back to Login</button>
+                </div>
+            </form>
+
 
             <!-- Signup Form (Hidden initially) -->
             <form id="signup-form" class="space-y-4 hidden">
@@ -179,21 +226,24 @@
     <!-- 2. AUTHENTICATED SYSTEM SHELL (Hidden initially) -->
     <div id="app-shell" class="w-full min-h-screen hidden flex">
 
+        <!-- Sidebar Overlay (Mobile) -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden backdrop-blur-sm transition-opacity opacity-0 md:hidden"></div>
+
         <!-- Sidebar Navigation -->
-        <aside class="fixed left-0 top-0 h-full w-[280px] bg-surface/30 backdrop-blur-xl border-r border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.4)] flex flex-col py-stack-lg z-50">
-            <div class="px-6 mb-10">
-                <div class="flex items-center gap-3 mb-2">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg active-glow">
+        <aside id="main-sidebar" class="fixed left-0 top-0 h-full w-[280px] bg-surface/30 backdrop-blur-xl border-r border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.4)] flex flex-col py-stack-lg z-50 overflow-hidden transition-transform duration-300 -translate-x-full md:translate-x-0">
+            <div class="px-5 mb-6 shrink-0">
+                <div class="flex items-center gap-3 mb-1">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg active-glow">
                         <span class="material-symbols-outlined text-on-primary">psychology</span>
                     </div>
                     <div>
-                        <h1 class="font-display text-headline-md font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary leading-none">AI Quiz Genius</h1>
+                        <h1 class="font-display text-lg font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary leading-none">AI Quiz Genius</h1>
                         <p class="text-[10px] uppercase tracking-widest text-on-surface-variant/50 font-bold mt-1">Intellectual Futurism</p>
                     </div>
                 </div>
             </div>
             
-            <nav id="sidebar-nav" class="flex-grow space-y-2 px-4">
+            <nav id="sidebar-nav" class="flex-grow space-y-1.5 px-4 min-h-0">
                 <button data-page="home" class="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-primary font-bold border-r-2 border-primary bg-primary/10 transition-all duration-300">
                     <span class="material-symbols-outlined">home</span>
                     <span>Home</span>
@@ -210,22 +260,30 @@
                     <span class="material-symbols-outlined">lightbulb</span>
                     <span>Topic to Quiz</span>
                 </button>
+                <button data-page="youtube" class="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant/70 font-medium hover:bg-white/5 hover:text-primary transition-all duration-300">
+                    <span class="material-symbols-outlined">play_circle</span>
+                    <span>YouTube to Quiz</span>
+                </button>
                 <button data-page="library" class="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant/70 font-medium hover:bg-white/5 hover:text-primary transition-all duration-300">
                     <span class="material-symbols-outlined">quiz</span>
                     <span>My Quizzes</span>
                 </button>
+                <button id="nav-admin" data-page="admin" class="hidden w-full flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant/70 font-medium hover:bg-white/5 hover:text-primary transition-all duration-300">
+                    <span class="material-symbols-outlined">admin_panel_settings</span>
+                    <span>Admin Panel</span>
+                </button>
             </nav>
 
-            <div class="px-6 mb-6">
-                <button id="quick-create-btn" class="w-full py-3 rounded-xl bg-gradient-to-r from-primary-container to-secondary-container text-on-primary font-bold shadow-lg hover:brightness-110 hover:shadow-primary/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+            <div class="px-5 mb-4 shrink-0 mt-3">
+                <button id="quick-create-btn" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary-container to-secondary-container text-on-primary font-bold shadow-lg hover:brightness-110 hover:shadow-primary/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
                     <span class="material-symbols-outlined text-sm">add</span>
                     <span>Create New Quiz</span>
                 </button>
             </div>
 
-            <div class="mt-auto px-4 border-t border-white/5 pt-6">
-                <div class="flex items-center gap-3 px-4 py-3 mb-4 glass-card rounded-2xl">
-                    <div class="w-10 h-10 rounded-full overflow-hidden border border-primary/30 bg-surface-container-high flex items-center justify-center">
+            <div class="mt-auto px-4 border-t border-white/5 pt-4 shrink-0">
+                <div class="flex items-center gap-3 px-3 py-2.5 mb-3 glass-card rounded-2xl">
+                    <div class="w-9 h-9 rounded-full overflow-hidden border border-primary/30 bg-surface-container-high flex items-center justify-center">
                         <span class="material-symbols-outlined text-on-surface-variant">person</span>
                     </div>
                     <div class="flex-1 min-w-0">
@@ -241,15 +299,23 @@
         </aside>
 
         <!-- Main Content Area -->
-        <main class="ml-[280px] min-h-screen flex flex-col flex-grow relative p-gutter">
+        <main class="ml-0 md:ml-[280px] min-h-screen flex flex-col flex-grow relative p-4 md:p-gutter max-w-full">
             
             <!-- Global Top Header -->
-            <header class="flex justify-between items-center mb-8 bg-transparent">
-                <div class="flex items-center gap-2">
-                    <span id="breadcrumb-parent" class="text-on-surface-variant/50 font-label-md">Dashboard /</span>
-                    <span id="breadcrumb-current" class="text-on-surface font-headline-md font-bold">Home</span>
+            <header class="flex justify-between items-center mb-6 md:mb-8 bg-transparent">
+                <div class="flex items-center gap-3">
+                    <button id="sidebar-toggle" class="md:hidden text-on-surface hover:text-primary transition-colors flex items-center justify-center p-1 rounded-md hover:bg-white/5">
+                        <span class="material-symbols-outlined text-[28px]">menu</span>
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <span id="breadcrumb-parent" class="text-on-surface-variant/50 font-label-md hidden sm:inline">Dashboard /</span>
+                        <span id="breadcrumb-current" class="text-on-surface font-headline-md font-bold text-xl sm:text-2xl">Home</span>
+                    </div>
                 </div>
-                <div class="flex items-center gap-gutter">
+                <div class="flex items-center gap-3">
+                    <button id="theme-toggle-btn" type="button" class="theme-toggle-btn flex items-center justify-center w-10 h-10 rounded-xl bg-surface-container-high border border-white/10 text-on-surface-variant hover:text-primary hover:bg-white/5 transition-all" aria-label="Switch to light theme" title="Switch theme">
+                        <span id="theme-toggle-icon" class="material-symbols-outlined text-[20px]">light_mode</span>
+                    </button>
                     <div class="flex items-center gap-4">
                         <!-- Backend Status -->
                         <div id="backend-status" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-high border border-white/10 text-xs font-semibold">
@@ -265,7 +331,7 @@
             <!-- A. HOME/DASHBOARD VIEW -->
             <section id="view-home" class="space-y-6">
                 <!-- Welcome Banner -->
-                <div class="glass-card rounded-[24px] p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                <div class="glass-card rounded-[24px] p-6 sm:p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
                     <div class="absolute top-0 right-0 w-[300px] h-[300px] bg-primary/5 blur-[80px] rounded-full"></div>
                     <div class="space-y-2">
                         <h2 class="font-display text-[28px] font-extrabold text-on-surface leading-tight">Welcome to AI Quiz Genius</h2>
@@ -308,7 +374,7 @@
                 </div>
 
                 <!-- Core Pipelines Links -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
                     <div onclick="switchView('video')" class="glass-card rounded-2xl p-6 cursor-pointer hover:border-primary/30 transition-all hover:translate-y-[-2px] space-y-3">
                         <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                             <span class="material-symbols-outlined">video_library</span>
@@ -330,19 +396,26 @@
                         <h4 class="font-headline-md font-bold text-lg text-white">Topic to Quiz</h4>
                         <p class="text-xs text-on-surface-variant/70">Run automated web search integrations on any educational topic to build structured quizzes.</p>
                     </div>
+                    <div onclick="switchView('youtube')" class="glass-card rounded-2xl p-6 cursor-pointer hover:border-primary/30 transition-all hover:translate-y-[-2px] space-y-3">
+                        <div class="w-10 h-10 rounded-lg bg-error/10 text-error flex items-center justify-center">
+                            <span class="material-symbols-outlined">play_circle</span>
+                        </div>
+                        <h4 class="font-headline-md font-bold text-lg text-white">YouTube to Quiz</h4>
+                        <p class="text-xs text-on-surface-variant/70">Paste a YouTube video link to transcribe, summarize, and generate a customized quiz.</p>
+                    </div>
                 </div>
             </section>
 
             <!-- B. VIDEO TO QUIZ VIEW -->
             <section id="view-video" class="space-y-6 hidden">
-                <div class="glass-card rounded-3xl p-8 max-w-3xl mx-auto space-y-6">
+                <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-3xl mx-auto space-y-6">
                     <div>
                         <h3 class="font-headline-lg text-headline-lg font-bold text-white mb-2">🎬 Video to Quiz Pipeline</h3>
                         <p class="text-label-md text-on-surface-variant/80">Upload an educational video. Our system will extract the audio track, transcribe it using Whisper, and structure a custom quiz.</p>
                     </div>
 
                     <!-- Dropzone -->
-                    <div id="video-dropzone" class="border-2 border-dashed border-white/10 hover:border-primary/50 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all bg-surface-container-low/30 hover:bg-white/5 space-y-4">
+                    <div id="video-dropzone" class="border-2 border-dashed border-white/10 hover:border-primary/50 rounded-2xl p-6 sm:p-10 flex flex-col items-center justify-center cursor-pointer transition-all bg-surface-container-low/30 hover:bg-white/5 space-y-4">
                         <span class="material-symbols-outlined text-4xl text-primary-container animate-pulse">cloud_upload</span>
                         <div class="text-center">
                             <p class="font-bold text-label-md text-white">Click to upload or drag & drop</p>
@@ -356,7 +429,7 @@
                         <div class="flex items-center gap-3">
                             <span class="material-symbols-outlined text-primary text-2xl">movie</span>
                             <div>
-                                <p id="video-filename" class="text-xs font-bold text-white max-w-sm truncate">video.mp4</p>
+                                <p id="video-filename" class="text-xs font-bold text-white max-w-[150px] sm:max-w-sm truncate">video.mp4</p>
                                 <p id="video-filesize" class="text-[10px] text-on-surface-variant/70">0.0 MB</p>
                             </div>
                         </div>
@@ -383,14 +456,14 @@
 
             <!-- C. PDF TO QUIZ VIEW -->
             <section id="view-pdf" class="space-y-6 hidden">
-                <div class="glass-card rounded-3xl p-8 max-w-3xl mx-auto space-y-6">
+                <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-3xl mx-auto space-y-6">
                     <div>
                         <h3 class="font-headline-lg text-headline-lg font-bold text-white mb-2">📄 PDF to Quiz Pipeline</h3>
                         <p class="text-label-md text-on-surface-variant/80">Upload academic materials or textbook chapters in PDF format. We will parse the selectable text and construct a quiz.</p>
                     </div>
 
                     <!-- Dropzone -->
-                    <div id="pdf-dropzone" class="border-2 border-dashed border-white/10 hover:border-primary/50 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer transition-all bg-surface-container-low/30 hover:bg-white/5 space-y-4">
+                    <div id="pdf-dropzone" class="border-2 border-dashed border-white/10 hover:border-primary/50 rounded-2xl p-6 sm:p-10 flex flex-col items-center justify-center cursor-pointer transition-all bg-surface-container-low/30 hover:bg-white/5 space-y-4">
                         <span class="material-symbols-outlined text-4xl text-primary-container animate-pulse">cloud_upload</span>
                         <div class="text-center">
                             <p class="font-bold text-label-md text-white">Click to upload or drag & drop</p>
@@ -404,7 +477,7 @@
                         <div class="flex items-center gap-3">
                             <span class="material-symbols-outlined text-primary text-2xl">picture_as_pdf</span>
                             <div>
-                                <p id="pdf-filename" class="text-xs font-bold text-white max-w-sm truncate">document.pdf</p>
+                                <p id="pdf-filename" class="text-xs font-bold text-white max-w-[150px] sm:max-w-sm truncate">document.pdf</p>
                                 <p id="pdf-filesize" class="text-[10px] text-on-surface-variant/70">0.0 MB</p>
                             </div>
                         </div>
@@ -431,7 +504,7 @@
 
             <!-- D. TOPIC TO QUIZ VIEW -->
             <section id="view-topic" class="space-y-6 hidden">
-                <div class="glass-card rounded-3xl p-8 max-w-3xl mx-auto space-y-6">
+                <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-3xl mx-auto space-y-6">
                     <div>
                         <h3 class="font-headline-lg text-headline-lg font-bold text-white mb-2">🔍 Topic to Quiz Pipeline</h3>
                         <p class="text-label-md text-on-surface-variant/80">Enter any educational topic. The AI will crawl multiple web sources (Wikipedia / DuckDuckGo), compile details, and assemble a comprehensive quiz.</p>
@@ -470,6 +543,36 @@
                 </div>
             </section>
 
+            <!-- D.2 YOUTUBE TO QUIZ VIEW -->
+            <section id="view-youtube" class="space-y-6 hidden">
+                <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-3xl mx-auto space-y-6">
+                    <div>
+                        <h3 class="font-headline-lg text-headline-lg font-bold text-white mb-2">🎬 YouTube to Quiz Pipeline</h3>
+                        <p class="text-label-md text-on-surface-variant/80">Enter a YouTube video URL. The AI will download the audio, transcribe it, summarize key takeaways, and build a custom quiz.</p>
+                    </div>
+
+                    <form id="youtube-quiz-form" class="space-y-5">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">YouTube URL</label>
+                            <input type="url" id="youtube-url-input" required class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface placeholder-on-surface-variant/40" placeholder="Paste a YouTube video link...">
+                        </div>
+
+                        <!-- Generation Progress -->
+                        <div id="youtube-progress" class="hidden space-y-3 glass-card p-4 rounded-xl border border-primary/20">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-primary animate-spin">sync</span>
+                                <p class="text-xs text-on-surface-variant font-medium">Downloading audio, transcribing, and generating quiz... Please wait (this may take 1-3 minutes).</p>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="btn-generate-youtube-quiz" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-primary-container to-secondary-container text-on-primary font-bold shadow-lg hover:brightness-110 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined">psychology</span>
+                            <span>Generate Quiz</span>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
             <!-- E. MY QUIZZES LIBRARY VIEW -->
             <section id="view-library" class="space-y-6 hidden">
                 <div class="flex justify-between items-center mb-4">
@@ -482,7 +585,7 @@
                 </div>
 
                 <!-- Empty State -->
-                <div id="library-empty-state" class="hidden glass-card rounded-2xl p-12 text-center max-w-md mx-auto space-y-4">
+                <div id="library-empty-state" class="hidden glass-card rounded-2xl p-8 sm:p-12 text-center max-w-md mx-auto space-y-4">
                     <span class="material-symbols-outlined text-5xl text-on-surface-variant/30">inventory_2</span>
                     <div>
                         <p class="font-bold text-white text-lg">No saved quizzes found</p>
@@ -504,10 +607,10 @@
                 </div>
 
                 <!-- Tabs header -->
-                <div class="flex border-b border-white/10 mb-6 bg-surface-container-low/30 rounded-xl p-1">
-                    <button id="quiz-tab-take" class="flex-grow py-3 text-center font-bold text-primary border-b-2 border-primary transition-all rounded-lg">✏️ Take the Quiz</button>
-                    <button id="quiz-tab-summary" class="flex-grow py-3 text-center font-semibold text-on-surface-variant hover:text-on-surface transition-all rounded-lg">💡 Summary</button>
-                    <button id="quiz-tab-eval" class="flex-grow py-3 text-center font-semibold text-on-surface-variant hover:text-on-surface transition-all rounded-lg">📊 Evaluation</button>
+                <div class="flex flex-col sm:flex-row border-b border-white/10 mb-6 bg-surface-container-low/30 rounded-xl p-1 gap-1">
+                    <button id="quiz-tab-take" class="flex-grow py-3 text-center font-bold text-primary border-b-2 sm:border-b-2 border-primary transition-all rounded-lg text-sm">✏️ Take the Quiz</button>
+                    <button id="quiz-tab-summary" class="flex-grow py-3 text-center font-semibold text-on-surface-variant hover:text-on-surface transition-all rounded-lg text-sm">💡 Summary</button>
+                    <button id="quiz-tab-eval" class="flex-grow py-3 text-center font-semibold text-on-surface-variant hover:text-on-surface transition-all rounded-lg text-sm">📊 Evaluation</button>
                 </div>
 
                 <!-- Tab: Take Quiz -->
@@ -565,10 +668,104 @@
                 </div>
             </section>
 
+            <!-- G. ADMIN PANEL VIEW -->
+            <section id="view-admin" class="space-y-6 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="font-headline-lg text-headline-lg font-bold text-white mb-2">Admin Panel</h3>
+                        <p class="text-label-md text-on-surface-variant/80">Manage users and monitor system stats</p>
+                    </div>
+                </div>
+                
+                <!-- Admin Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="glass-card rounded-2xl p-6 flex items-center gap-4 border border-primary/20">
+                        <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                            <span class="material-symbols-outlined text-2xl">group</span>
+                        </div>
+                        <div>
+                            <p class="text-xs text-on-surface-variant/70 uppercase tracking-widest font-bold">Total Users</p>
+                            <h3 id="admin-stat-users" class="text-3xl font-extrabold text-white mt-1">0</h3>
+                        </div>
+                    </div>
+                    <div class="glass-card rounded-2xl p-6 flex items-center gap-4 border border-tertiary/20">
+                        <div class="w-12 h-12 rounded-xl bg-tertiary/10 text-tertiary flex items-center justify-center">
+                            <span class="material-symbols-outlined text-2xl">quiz</span>
+                        </div>
+                        <div>
+                            <p class="text-xs text-on-surface-variant/70 uppercase tracking-widest font-bold">Total Quizzes</p>
+                            <h3 id="admin-stat-quizzes" class="text-3xl font-extrabold text-white mt-1">0</h3>
+                        </div>
+                    </div>
+                    <div class="glass-card rounded-2xl p-6 flex items-center gap-4 border border-secondary/20">
+                        <div class="w-12 h-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
+                            <span class="material-symbols-outlined text-2xl">grade</span>
+                        </div>
+                        <div>
+                            <p class="text-xs text-on-surface-variant/70 uppercase tracking-widest font-bold">Avg G-Eval</p>
+                            <h3 id="admin-stat-eval" class="text-3xl font-extrabold text-white mt-1">0.0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Tabs -->
+                <div class="flex border-b border-white/10 mb-6 bg-surface-container-low/30 rounded-xl p-1 gap-1 max-w-sm">
+                    <button id="admin-tab-users-btn" onclick="switchAdminTab('users')" class="flex-grow py-3 text-center font-bold text-primary border-b-2 border-primary transition-all rounded-lg text-sm">Users</button>
+                    <button id="admin-tab-quizzes-btn" onclick="switchAdminTab('quizzes')" class="flex-grow py-3 text-center font-semibold text-on-surface-variant hover:text-on-surface transition-all rounded-lg text-sm">All Quizzes</button>
+                </div>
+
+                <!-- Users List -->
+                <div id="admin-users-list" class="space-y-4">
+                    <!-- Injected by JS -->
+                </div>
+                
+                <!-- Quizzes List -->
+                <div id="admin-quizzes-list" class="space-y-4 hidden">
+                    <!-- Injected by JS -->
+                </div>
+            </section>
+
         </main>
     </div>
 
     <!-- JS Scripts -->
+    <script>
+        // Mobile Sidebar Toggle
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const mainSidebar = document.getElementById('main-sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+        if (sidebarToggle && mainSidebar && sidebarOverlay) {
+            function toggleSidebar() {
+                const isOpen = !mainSidebar.classList.contains('-translate-x-full');
+                if (isOpen) {
+                    mainSidebar.classList.add('-translate-x-full');
+                    sidebarOverlay.classList.remove('opacity-100');
+                    setTimeout(() => sidebarOverlay.classList.add('hidden'), 300);
+                } else {
+                    sidebarOverlay.classList.remove('hidden');
+                    // slight delay to allow display:block to apply before opacity transition
+                    setTimeout(() => {
+                        sidebarOverlay.classList.add('opacity-100');
+                        mainSidebar.classList.remove('-translate-x-full');
+                    }, 10);
+                }
+            }
+            
+            sidebarToggle.addEventListener('click', toggleSidebar);
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+
+            // Close sidebar on navigation (mobile)
+            const navLinks = mainSidebar.querySelectorAll('button[data-page]');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth < 768 && !mainSidebar.classList.contains('-translate-x-full')) {
+                        toggleSidebar();
+                    }
+                });
+            });
+        }
+    </script>
     <script src="app.js"></script>
 </body>
 </html>

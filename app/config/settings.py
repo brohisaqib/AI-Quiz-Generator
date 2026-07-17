@@ -56,6 +56,7 @@ class Config:
     # File Upload Constraints
     # Default: 100MB
     MAX_CONTENT_LENGTH: int = int(os.getenv("MAX_UPLOAD_SIZE", 104857600))
+    MAX_YOUTUBE_DURATION_MINUTES: int = int(os.getenv("MAX_YOUTUBE_DURATION_MINUTES", "45"))
     
     # Supported Video Formats
     ALLOWED_EXTENSIONS: set = {"mp4", "mov", "avi", "mkv"}
@@ -84,6 +85,18 @@ class Config:
 
     # CORS allowed origins (comma-separated or "*" for dev)
     ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "*")
+
+    # Flask-Mail settings
+    MAIL_SERVER: str = os.getenv("MAIL_SERVER", "")
+    MAIL_PORT: int = int(os.getenv("MAIL_PORT", "587"))
+    MAIL_USE_TLS: bool = os.getenv("MAIL_USE_TLS", "True").lower() in ("true", "1", "yes")
+    MAIL_USERNAME: str = os.getenv("MAIL_USERNAME", "")
+    MAIL_PASSWORD: str = os.getenv("MAIL_PASSWORD", "")
+    MAIL_DEFAULT_SENDER: str = os.getenv("MAIL_DEFAULT_SENDER", "")
+
+    # Frontend Settings
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://127.0.0.1:8501")
+
 
     @classmethod
     def ensure_directories_exist(cls) -> None:

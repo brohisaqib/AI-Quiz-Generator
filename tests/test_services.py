@@ -82,24 +82,24 @@ def test_whisper_transcription(mock_openai_class):
     mock_client.audio.transcriptions.create.return_value = "This is transcription text."
     
     # Set Config API key to non-empty
-    Config.OPENAI_API_KEY = "mock-key"
+    Config.GROQ_API_KEY = "mock-key"
     
     service = WhisperService()
     
     # Mock the file open
-    with patch("builtins.open", patch("builtins.open", MagicMock())):
+    with patch("builtins.open", MagicMock()):
         with patch("os.path.exists", return_value=True):
-            text = service.transcribe_chunk("/fake/chunk.mp3")
+            text = service._transcribe_chunk("/fake/chunk.mp3")
             assert text == "This is transcription text."
 
 # 4. Test SummaryService
-@patch("app.services.summary_service.ChatOpenAI")
+@patch("app.services.summary_service.ChatGroq")
 def test_summary_service(mock_chat):
     mock_chain_instance = MagicMock()
     mock_chain_instance.invoke.return_value = "Markdown Summary Content."
     
     # Instantiate SummaryService and override chain
-    Config.OPENAI_API_KEY = "mock-key"
+    Config.GROQ_API_KEY = "mock-key"
     service = SummaryService()
     service.chain = mock_chain_instance
     
@@ -108,7 +108,7 @@ def test_summary_service(mock_chat):
     mock_chain_instance.invoke.assert_called_once_with({"transcription": "Some Transcription text."})
 
 # 5. Test QuizService
-@patch("app.services.quiz_service.ChatOpenAI")
+@patch("app.services.quiz_service.ChatGroq")
 def test_quiz_service(mock_chat):
     mock_quiz_response = QuizResponse(
         title="Sample Quiz",
@@ -127,7 +127,7 @@ def test_quiz_service(mock_chat):
     mock_chain_instance = MagicMock()
     mock_chain_instance.invoke.return_value = mock_quiz_response
     
-    Config.OPENAI_API_KEY = "mock-key"
+    Config.GROQ_API_KEY = "mock-key"
     service = QuizService()
     service.chain = mock_chain_instance
     
@@ -137,7 +137,7 @@ def test_quiz_service(mock_chat):
     mock_chain_instance.invoke.assert_called_once()
 
 # 6. Test EvaluationService
-@patch("app.services.evaluation_service.ChatOpenAI")
+@patch("app.services.evaluation_service.ChatGroq")
 def test_evaluation_service(mock_chat):
     mock_eval = QuizEvaluation(
         score=9.0,
@@ -146,7 +146,7 @@ def test_evaluation_service(mock_chat):
     mock_chain_instance = MagicMock()
     mock_chain_instance.invoke.return_value = mock_eval
     
-    Config.OPENAI_API_KEY = "mock-key"
+    Config.GROQ_API_KEY = "mock-key"
     service = EvaluationService()
     service.chain = mock_chain_instance
     
