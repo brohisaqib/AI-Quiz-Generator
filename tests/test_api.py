@@ -109,18 +109,23 @@ def test_generate_quiz_pipeline(
     assert quiz_file.exists()
     assert transcript_file.exists()
 
-@patch("app.models.quiz_result.QuizResult.query")
-def test_get_quiz_endpoints(mock_query, client):
-    """Test retrieving and downloading saved quizzes."""
-    # Create test data files manually in output directory
+def test_get_quiz_endpoints(app, client):
+    """Test retrieving and downloading saved quizzes.
+
+    Patches QuizResult at the routes-module level (app.api.routes.QuizResult)
+    so unittest.mock never has to resolve the Flask-SQLAlchemy descriptor
+    outside an application context, avoiding the RuntimeError that occurs when
+    patching the model class attribute directly.
+    """
     video_id = "mock-quiz-uuid"
     quiz_data = {
         "title": "Mock Quiz",
         "summary": "Mock summary",
         "questions": [],
-        "evaluation": {"score": 8.0, "feedback": "Good"}
+        "evaluation": {"score": 8.0, "feedback": "Good"},
     }
-    
+
+    # Build a fully-featured mock quiz row including the two new columns
     mock_quiz = MagicMock()
     mock_quiz.id = "mock-quiz-uuid"
     mock_quiz.title = "Mock Quiz"
@@ -129,6 +134,8 @@ def test_get_quiz_endpoints(mock_query, client):
     mock_quiz.evaluation_score = 8.0
     mock_quiz.evaluation_feedback = "Good"
     mock_quiz.transcript = "Mock transcript content"
+    mock_quiz.difficulty = "Intermediate"        # new column (Feature 1)
+    mock_quiz.time_limit_minutes = None          # new column (Feature 2)
 
     def filter_by_side_effect(**kwargs):
         mock_filtered = MagicMock()
@@ -137,33 +144,43 @@ def test_get_quiz_endpoints(mock_query, client):
         else:
             mock_filtered.first.return_value = None
         return mock_filtered
-    mock_query.filter_by.side_effect = filter_by_side_effect
 
-    # Save mock files
-    Config.ensure_directories_exist()
-    with open(Config.OUTPUT_FOLDER / f"{video_id}_quiz.json", "w", encoding="utf-8") as f:
-        json.dump(quiz_data, f)
-    with open(Config.OUTPUT_FOLDER / f"{video_id}_transcript.txt", "w", encoding="utf-8") as f:
-        f.write("Mock transcript content")
-        
-    # 1. Test GET /quiz/<id>
-    res_quiz = client.get(f"/quiz/{video_id}")
-    assert res_quiz.status_code == 200
-    assert res_quiz.json["title"] == "Mock Quiz"
-    
-    # 2. Test GET /transcript/<id>
-    res_tx = client.get(f"/transcript/{video_id}")
-    assert res_tx.status_code == 200
-    assert res_tx.json["transcript"] == "Mock transcript content"
-    
-    # 3. Test GET /download/<id>
-    res_dl = client.get(f"/download/{video_id}")
-    assert res_dl.status_code == 200
-    assert "attachment" in res_dl.headers.get("Content-Disposition", "")
-    
-    # 4. Test Not Found for invalid ID
-    res_invalid = client.get("/quiz/non-existent-id")
-    assert res_invalid.status_code == 404
+    # Patch at the routes-import level so patch() resolves a plain class
+    # reference, not the SQLAlchemy InstrumentedAttribute descriptor.
+    mock_qr_cls = MagicMock()
+    mock_qr_cls.query.filter_by.side_effect = filter_by_side_effect
+
+    with app.app_context():
+        with patch("app.api.routes.QuizResult", mock_qr_cls):
+            # Save mock files
+            Config.ensure_directories_exist()
+            with open(Config.OUTPUT_FOLDER / f"{video_id}_quiz.json", "w", encoding="utf-8") as f:
+                json.dump(quiz_data, f)
+            with open(Config.OUTPUT_FOLDER / f"{video_id}_transcript.txt", "w", encoding="utf-8") as f:
+                f.write("Mock transcript content")
+
+            # 1. Test GET /quiz/<id>
+            res_quiz = client.get(f"/quiz/{video_id}")
+            assert res_quiz.status_code == 200
+            assert res_quiz.json["title"] == "Mock Quiz"
+            # Confirm the two new fields are present in the response
+            assert "difficulty" in res_quiz.json
+            assert "time_limit_minutes" in res_quiz.json
+
+            # 2. Test GET /transcript/<id>
+            res_tx = client.get(f"/transcript/{video_id}")
+            assert res_tx.status_code == 200
+            assert res_tx.json["transcript"] == "Mock transcript content"
+
+            # 3. Test GET /download/<id>
+            res_dl = client.get(f"/download/{video_id}")
+            assert res_dl.status_code == 200
+            assert "attachment" in res_dl.headers.get("Content-Disposition", "")
+
+            # 4. Test Not Found for invalid ID
+            res_invalid = client.get("/quiz/non-existent-id")
+            assert res_invalid.status_code == 404
+
 
 
 @patch("app.services.youtube_service.YouTubeService.download_audio")

@@ -447,6 +447,30 @@
                         </div>
                     </div>
 
+                    <!-- Difficulty & Timer Controls -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-white/5 pt-4 mt-2">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Difficulty Level</label>
+                            <select id="video-difficulty" class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface">
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate" selected>Intermediate (Default)</option>
+                                <option value="Advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Time Limit</label>
+                            <div class="flex gap-2">
+                                <select id="video-timer-mode" onchange="toggleDurationInput('video')" class="flex-grow bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface">
+                                    <option value="unlimited" selected>Unlimited Time</option>
+                                    <option value="timed">Timed</option>
+                                </select>
+                                <div id="video-duration-wrapper" class="hidden w-24">
+                                    <input type="number" id="video-timer-duration" min="1" max="180" value="10" placeholder="Min" class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-3 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface font-semibold text-center">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <button id="btn-generate-video-quiz" disabled class="w-full py-3.5 rounded-xl bg-white/5 text-on-surface-variant/40 font-bold border border-white/5 cursor-not-allowed transition-all flex items-center justify-center gap-2">
                         <span class="material-symbols-outlined">psychology</span>
                         <span>Generate Quiz from Video</span>
@@ -495,6 +519,30 @@
                         </div>
                     </div>
 
+                    <!-- Difficulty & Timer Controls -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-white/5 pt-4 mt-2">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Difficulty Level</label>
+                            <select id="pdf-difficulty" class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface">
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate" selected>Intermediate (Default)</option>
+                                <option value="Advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Time Limit</label>
+                            <div class="flex gap-2">
+                                <select id="pdf-timer-mode" onchange="toggleDurationInput('pdf')" class="flex-grow bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface">
+                                    <option value="unlimited" selected>Unlimited Time</option>
+                                    <option value="timed">Timed</option>
+                                </select>
+                                <div id="pdf-duration-wrapper" class="hidden w-24">
+                                    <input type="number" id="pdf-timer-duration" min="1" max="180" value="10" placeholder="Min" class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-3 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface font-semibold text-center">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <button id="btn-generate-pdf-quiz" disabled class="w-full py-3.5 rounded-xl bg-white/5 text-on-surface-variant/40 font-bold border border-white/5 cursor-not-allowed transition-all flex items-center justify-center gap-2">
                         <span class="material-symbols-outlined">psychology</span>
                         <span>Generate Quiz from PDF</span>
@@ -527,6 +575,30 @@
                             <p class="text-[10px] text-on-surface-variant/50 mt-1">Controls how many web search excerpts are analyzed prior to generation.</p>
                         </div>
 
+                        <!-- Difficulty & Timer Controls -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-white/5 pt-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Difficulty Level</label>
+                                <select id="topic-difficulty" class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface">
+                                    <option value="Beginner">Beginner</option>
+                                    <option value="Intermediate" selected>Intermediate (Default)</option>
+                                    <option value="Advanced">Advanced</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Time Limit</label>
+                                <div class="flex gap-2">
+                                    <select id="topic-timer-mode" onchange="toggleDurationInput('topic')" class="flex-grow bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface">
+                                        <option value="unlimited" selected>Unlimited Time</option>
+                                        <option value="timed">Timed</option>
+                                    </select>
+                                    <div id="topic-duration-wrapper" class="hidden w-24">
+                                        <input type="number" id="topic-timer-duration" min="1" max="180" value="10" placeholder="Min" class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-3 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface font-semibold text-center">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Generation Progress -->
                         <div id="topic-progress" class="hidden space-y-3 glass-card p-4 rounded-xl border border-primary/20">
                             <div class="flex items-center gap-3">
@@ -555,6 +627,30 @@
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">YouTube URL</label>
                             <input type="url" id="youtube-url-input" required class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface placeholder-on-surface-variant/40" placeholder="Paste a YouTube video link...">
+                        </div>
+
+                        <!-- Difficulty & Timer Controls -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-white/5 pt-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Difficulty Level</label>
+                                <select id="youtube-difficulty" class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface">
+                                    <option value="Beginner">Beginner</option>
+                                    <option value="Intermediate" selected>Intermediate (Default)</option>
+                                    <option value="Advanced">Advanced</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant/70 mb-2">Time Limit</label>
+                                <div class="flex gap-2">
+                                    <select id="youtube-timer-mode" onchange="toggleDurationInput('youtube')" class="flex-grow bg-surface-container-low/50 border border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface">
+                                        <option value="unlimited" selected>Unlimited Time</option>
+                                        <option value="timed">Timed</option>
+                                    </select>
+                                    <div id="youtube-duration-wrapper" class="hidden w-24">
+                                        <input type="number" id="youtube-timer-duration" min="1" max="180" value="10" placeholder="Min" class="w-full bg-surface-container-low/50 border border-white/10 rounded-xl px-3 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-on-surface font-semibold text-center">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Generation Progress -->
@@ -603,6 +699,11 @@
                     <div>
                         <h2 id="active-quiz-title" class="font-display text-2xl font-extrabold text-white">Quiz Title</h2>
                         <p id="active-quiz-type" class="text-xs text-primary font-semibold mt-1">Topic Search Pipeline</p>
+                    </div>
+                    <!-- Countdown Timer -->
+                    <div id="quiz-timer-display" class="hidden flex items-center gap-2 bg-error/10 text-error px-4 py-2 rounded-xl border border-error/20 font-mono font-bold text-lg">
+                        <span class="material-symbols-outlined text-sm animate-pulse">timer</span>
+                        <span id="quiz-timer-countdown">00:00</span>
                     </div>
                 </div>
 

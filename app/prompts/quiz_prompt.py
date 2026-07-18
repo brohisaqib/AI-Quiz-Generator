@@ -8,11 +8,20 @@ quiz_system_prompt = (
     "2. Generate between 5 to 10 questions depending on the depth of the content (default to 5 if the content is short).\n"
     "3. Each question must have exactly 4 multiple choice options.\n"
     "4. Ensure that the correct answer is indeed correct and that it matches one of the options word-for-word.\n"
-    "5. Avoid simple recall questions; write questions that test understanding, application, or analysis.\n"
-    "6. Provide a detailed, pedagogical explanation for each question, explaining why the correct answer is right and why other options are incorrect.\n"
-    "7. Assign an appropriate difficulty level ('Easy', 'Medium', or 'Hard') to each question to ensure a balanced assessment.\n"
-    "8. Identify the specific subtopic or concept from the video that each question tests.\n"
-    "9. Rely only on the facts directly mentioned in the summary and transcript. Do not invent facts.\n\n"
+    "5. Provide a detailed, pedagogical explanation for each question, explaining why the correct answer is right and why other options are incorrect.\n"
+    "6. Assign an appropriate difficulty level ('Easy', 'Medium', or 'Hard') to each question to ensure a balanced assessment.\n"
+    "7. Identify the specific subtopic or concept from the video that each question tests.\n"
+    "8. Rely only on the facts directly mentioned in the summary and transcript. Do not invent facts.\n\n"
+    "DIFFICULTY LEVEL GUIDANCE (overall quiz difficulty: {difficulty_level}):\n"
+    "- If the difficulty level is 'Beginner': Focus on direct recall and comprehension questions. Use simpler "
+    "vocabulary. Make distractors more obviously wrong so learners can build confidence. Prioritize "
+    "fact-retrieval and straightforward definition-based questions.\n"
+    "- If the difficulty level is 'Intermediate' (default): Create questions that test understanding, "
+    "application, and analysis. Use a balanced mix of question types with moderately plausible distractors. "
+    "This is the standard baseline quality.\n"
+    "- If the difficulty level is 'Advanced': Design analytical, application-based, and inferential questions. "
+    "Use closely-related and highly plausible distractors that require careful reasoning. Reference more nuanced "
+    "details from the source text and require synthesis of multiple concepts.\n\n"
     "You must respond with a single valid JSON object only. Do not include any text, explanation, or markdown "
     "formatting outside the JSON object.\n\n"
     "CRITICAL: You must use EXACTLY these field names in your JSON output. Do not rename, abbreviate, or "
@@ -46,7 +55,7 @@ quiz_system_prompt = (
 )
 
 QUIZ_PROMPT = PromptTemplate(
-    input_variables=["summary", "transcription"],
+    input_variables=["summary", "transcription", "difficulty_level"],
     partial_variables={"format_instructions": ""},
     template=quiz_system_prompt
 )

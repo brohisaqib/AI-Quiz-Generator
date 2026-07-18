@@ -32,13 +32,15 @@ class QuizService:
 
         self.chain = self.prompt | self.structured_llm
 
-    def generate_quiz(self, summary: str, transcription: str) -> QuizResponse:
+    def generate_quiz(self, summary: str, transcription: str, difficulty: str = "Intermediate") -> QuizResponse:
         """
         Generate multiple choice questions based on summary and transcription.
 
         Args:
             summary: The generated educational summary.
             transcription: The original transcript text of the video.
+            difficulty: Quiz difficulty level — "Beginner", "Intermediate", or "Advanced".
+                        Defaults to "Intermediate". Invalid values are silently clamped.
 
         Returns:
             A QuizResponse Pydantic model containing the title and questions.
@@ -51,16 +53,23 @@ class QuizService:
             logger.error("Empty summary or transcription provided for quiz generation")
             raise ValueError("Both summary and transcription content are required for quiz generation")
 
+        # Validate difficulty — clamp to safe default on invalid input
+        valid_difficulties = {"Beginner", "Intermediate", "Advanced"}
+        if not difficulty or difficulty.strip() not in valid_difficulties:
+            difficulty = "Intermediate"
+        difficulty = difficulty.strip()
+
         # Truncate transcript to keep total prompt size within Groq's TPM limits
         max_transcript_chars = 4000
         transcription_excerpt = transcription[:max_transcript_chars]
 
-        logger.info("Generating educational quiz with structured output (Groq)")
+        logger.info(f"Generating educational quiz with structured output (Groq) — difficulty: {difficulty}")
 
         try:
             quiz_response: QuizResponse = self.chain.invoke({
                 "summary": summary,
-                "transcription": transcription_excerpt
+                "transcription": transcription_excerpt,
+                "difficulty_level": difficulty,
             })
 
             if not quiz_response.questions:

@@ -25,3 +25,18 @@ class QuizGenerationError(QuizGeneratorException):
 class EvaluationError(QuizGeneratorException):
     """Exception raised when quiz evaluation fails."""
     pass
+
+class ContentModerationError(QuizGeneratorException):
+    """Exception raised when source content fails the moderation / guardrails check.
+
+    Attributes:
+        reason: A short, human-readable explanation of why the content was
+            rejected (never contains the flagged text itself).
+        status_code: HTTP status code to return to the client (always 400).
+    """
+
+    status_code: int = 400
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason

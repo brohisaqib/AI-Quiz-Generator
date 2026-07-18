@@ -4,6 +4,70 @@ let currentQuiz = null;
 let userAnswers = {};
 let activeQuizTab = "take";
 
+// Timer system variables
+let quizTimerInterval = null;
+
+function toggleDurationInput(prefix) {
+    const timerMode = document.getElementById(`${prefix}-timer-mode`).value;
+    const durationWrapper = document.getElementById(`${prefix}-duration-wrapper`);
+    if (timerMode === "timed") {
+        durationWrapper.classList.remove("hidden");
+    } else {
+        durationWrapper.classList.add("hidden");
+    }
+}
+window.toggleDurationInput = toggleDurationInput;
+
+function startQuizTimer(durationMinutes, onExpire) {
+    stopQuizTimer();
+
+    if (!durationMinutes || durationMinutes <= 0) {
+        const timerDisplay = document.getElementById("quiz-timer-display");
+        if (timerDisplay) timerDisplay.classList.add("hidden");
+        return;
+    }
+
+    const timerDisplay = document.getElementById("quiz-timer-display");
+    const timerCountdown = document.getElementById("quiz-timer-countdown");
+    if (timerDisplay) timerDisplay.classList.remove("hidden");
+
+    let totalSeconds = durationMinutes * 60;
+
+    const updateDisplay = () => {
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        if (timerCountdown) {
+            timerCountdown.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+    };
+
+    updateDisplay();
+
+    quizTimerInterval = setInterval(() => {
+        totalSeconds--;
+        if (totalSeconds <= 0) {
+            updateDisplay();
+            stopQuizTimer();
+            if (typeof onExpire === "function") {
+                onExpire();
+            }
+        } else {
+            updateDisplay();
+        }
+    }, 1000);
+}
+
+function stopQuizTimer() {
+    if (quizTimerInterval) {
+        clearInterval(quizTimerInterval);
+        quizTimerInterval = null;
+    }
+    const timerDisplay = document.getElementById("quiz-timer-display");
+    if (timerDisplay) {
+        timerDisplay.classList.add("hidden");
+    }
+}
+
 // Initialize App
 document.addEventListener("DOMContentLoaded", async () => {
     initializeTheme();
@@ -659,6 +723,10 @@ async function handleGenerateVideoQuiz(file) {
 
         const uploadData = await uploadResponse.json();
         const videoId = uploadData.video_id;
+        const difficulty = document.getElementById("video-difficulty").value;
+        const timerMode = document.getElementById("video-timer-mode").value;
+        const timeLimitVal = document.getElementById("video-timer-duration").value;
+        const timeLimit = timerMode === "timed" ? parseInt(timeLimitVal) : null;
 
         // Step 2: Generate Quiz
         progressText.textContent = "Transcribing audio (Whisper) & creating quiz...";
@@ -667,7 +735,11 @@ async function handleGenerateVideoQuiz(file) {
 
         const genResponse = await apiCall("/generate-quiz", {
             method: "POST",
-            body: JSON.stringify({ video_id: videoId })
+            body: JSON.stringify({
+                video_id: videoId,
+                difficulty: difficulty,
+                time_limit_minutes: timeLimit
+            })
         });
 
         progressBar.style.width = "100%";
@@ -707,8 +779,17 @@ async function handleGeneratePdfQuiz(file) {
     progressBar.style.width = "25%";
     progressPct.textContent = "25%";
 
+    const difficulty = document.getElementById("pdf-difficulty").value;
+    const timerMode = document.getElementById("pdf-timer-mode").value;
+    const timeLimitVal = document.getElementById("pdf-timer-duration").value;
+    const timeLimit = timerMode === "timed" ? parseInt(timeLimitVal) : null;
+
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("difficulty", difficulty);
+    if (timeLimit !== null) {
+        formData.append("time_limit_minutes", timeLimit);
+    }
 
     try {
         const response = await apiCall("/generate-quiz-from-pdf", {
@@ -749,9 +830,19 @@ async function handleGenerateTopicQuiz(e) {
     btnGenerate.disabled = true;
 
     try {
+        const difficulty = document.getElementById("topic-difficulty").value;
+        const timerMode = document.getElementById("topic-timer-mode").value;
+        const timeLimitVal = document.getElementById("topic-timer-duration").value;
+        const timeLimit = timerMode === "timed" ? parseInt(timeLimitVal) : null;
+
         const response = await apiCall("/generate-quiz-from-topic", {
             method: "POST",
-            body: JSON.stringify({ topic, max_results: parseInt(maxResults) })
+            body: JSON.stringify({
+                topic,
+                max_results: parseInt(maxResults),
+                difficulty: difficulty,
+                time_limit_minutes: timeLimit
+            })
         });
 
         const data = await response.json();
@@ -784,9 +875,18 @@ async function handleGenerateYoutubeQuiz(e) {
     btnGenerate.disabled = true;
 
     try {
+        const difficulty = document.getElementById("youtube-difficulty").value;
+        const timerMode = document.getElementById("youtube-timer-mode").value;
+        const timeLimitVal = document.getElementById("youtube-timer-duration").value;
+        const timeLimit = timerMode === "timed" ? parseInt(timeLimitVal) : null;
+
         const response = await apiCall("/generate-quiz-from-youtube", {
             method: "POST",
-            body: JSON.stringify({ youtube_url: youtubeUrl })
+            body: JSON.stringify({
+                youtube_url: youtubeUrl,
+                difficulty: difficulty,
+                time_limit_minutes: timeLimit
+            })
         });
 
         const data = await response.json();
@@ -1007,6 +1107,19 @@ function loadQuizIntoPlayer(quizData) {
     document.getElementById("btn-retake-quiz").classList.add("hidden");
     document.getElementById("quiz-score-banner").classList.add("hidden");
 
+    // Manage countdown timer
+    if (quizData.time_limit_minutes) {
+        startQuizTimer(quizData.time_limit_minutes, () => {
+            showToast("Time Expired", "The time limit has reached. Auto-submitting your answers!", true);
+            const submitBtn = document.getElementById("btn-submit-quiz");
+            if (submitBtn && !submitBtn.classList.contains("hidden")) {
+                handleQuizSubmission(new Event("submit"));
+            }
+        });
+    } else {
+        stopQuizTimer();
+    }
+
     // Redirect to Player View
     switchView("quiz");
 }
@@ -1018,7 +1131,10 @@ function selectAnswer(qIndex, val) {
 
 // Submit Answers & Grade Quiz
 function handleQuizSubmission(e) {
-    e.preventDefault();
+    if (e && typeof e.preventDefault === "function") {
+        e.preventDefault();
+    }
+    stopQuizTimer();
     if (!currentQuiz) return;
 
     const questions = currentQuiz.questions || [];

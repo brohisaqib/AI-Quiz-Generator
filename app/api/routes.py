@@ -26,8 +26,48 @@ from app.utils.auth import require_auth
 from app.utils.helpers import safe_delete_file
 from app.utils.logger import get_logger
 from app.utils.openai_error_handler import OpenAIServiceError
+# --- Moderation / Guardrails (additive) ---
+from app.services.moderation_service import ModerationService
+from app.core.exceptions import ContentModerationError
 
 logger = get_logger("routes")
+
+# Valid difficulty levels for quiz generation
+_VALID_DIFFICULTIES = {"Beginner", "Intermediate", "Advanced"}
+
+
+def _validate_difficulty(raw: Optional[str]) -> str:
+    """Validate and normalize a difficulty level string.
+
+    Args:
+        raw: The raw difficulty value from the request, or None.
+
+    Returns:
+        A valid difficulty string — one of "Beginner", "Intermediate", or "Advanced".
+    """
+    if raw and raw.strip() in _VALID_DIFFICULTIES:
+        return raw.strip()
+    return "Intermediate"
+
+
+def _validate_time_limit(raw: Optional[Any]) -> Optional[int]:
+    """Validate an optional time-limit value.
+
+    Args:
+        raw: The raw time limit value from the request, or None.
+
+    Returns:
+        A positive integer minutes value, or None for unlimited.
+    """
+    if raw is None or raw == "" or raw == "0":
+        return None
+    try:
+        minutes = int(raw)
+        if minutes > 0:
+            return minutes
+    except (TypeError, ValueError):
+        pass
+    return None
 
 # Record the application startup time for uptime calculation
 START_TIME = time.time()
@@ -51,13 +91,21 @@ def get_service(name: str, service_class: Any) -> Any:
     return _services[name]
 
 
-def _build_quiz_response(quiz_result: Any, summary: str, evaluation_result: Any) -> Dict[str, Any]:
+def _build_quiz_response(
+    quiz_result: Any,
+    summary: str,
+    evaluation_result: Any,
+    difficulty: str = "Intermediate",
+    time_limit_minutes: Optional[int] = None,
+) -> Dict[str, Any]:
     """Build the shared, canonical JSON response shape used by the API.
 
     Args:
         quiz_result: A QuizResponse Pydantic model instance.
         summary: The generated educational summary string.
         evaluation_result: A QuizEvaluation Pydantic model instance.
+        difficulty: The quiz difficulty level used for generation.
+        time_limit_minutes: Optional time limit in minutes (None = unlimited).
 
     Returns:
         A dictionary matching the response contract.
@@ -82,6 +130,8 @@ def _build_quiz_response(quiz_result: Any, summary: str, evaluation_result: Any)
             "score": evaluation_result.score,
             "feedback": evaluation_result.feedback,
         },
+        "difficulty": difficulty,
+        "time_limit_minutes": time_limit_minutes,
     }
 
 
@@ -96,6 +146,8 @@ def _persist_quiz_to_db(
     evaluation_score: float,
     evaluation_feedback: str,
     transcript: str,
+    difficulty: str = "Intermediate",
+    time_limit_minutes: Optional[int] = None,
 ) -> Optional[str]:
     """Helper to persist a quiz generation result to the PostgreSQL database.
 
@@ -113,6 +165,8 @@ def _persist_quiz_to_db(
         evaluation_score: The quality score.
         evaluation_feedback: Feedback from G-Eval.
         transcript: The extracted source content.
+        difficulty: The quiz difficulty level used for generation.
+        time_limit_minutes: Optional time limit in minutes (None = unlimited).
 
     Returns:
         The UUID string of the QuizResult if committed, or None.
@@ -141,6 +195,8 @@ def _persist_quiz_to_db(
             evaluation_score=evaluation_score,
             evaluation_feedback=evaluation_feedback,
             transcript=transcript,
+            difficulty=difficulty,
+            time_limit_minutes=time_limit_minutes,
         )
         db.session.add(quiz_result)
         db.session.commit()
@@ -222,6 +278,8 @@ def generate_quiz() -> Any:
         return jsonify({"success": False, "error": "Missing video_id in request body"}), 400
 
     video_id = data["video_id"]
+    difficulty = _validate_difficulty(data.get("difficulty"))
+    time_limit_minutes = _validate_time_limit(data.get("time_limit_minutes"))
     logger.info(f"Processing quiz generation for video ID: {video_id}")
 
     video_path = None
@@ -265,6 +323,17 @@ def generate_quiz() -> Any:
             logger.error(f"Whisper transcription failed: {str(we)}")
             return jsonify({"success": False, "error": f"Whisper transcription failed: {str(we)}"}), 502
 
+        # 5b. Moderation check — AFTER transcription, BEFORE summary/quiz
+        try:
+            is_safe, mod_reason = get_service("moderation", ModerationService).check_content(
+                transcription, source_type="video"
+            )
+        except Exception as me:
+            logger.error(f"Moderation service call failed (video): {str(me)}", exc_info=True)
+            return jsonify({"success": False, "error": f"Content moderation check failed: {str(me)}"}), 502
+        if not is_safe:
+            raise ContentModerationError(mod_reason)
+
         # 6. Generate Summary
         try:
             summary = get_service("summary", SummaryService).generate_summary(transcription)
@@ -276,7 +345,7 @@ def generate_quiz() -> Any:
 
         # 7. Generate Quiz
         try:
-            quiz_result = get_service("quiz", QuizService).generate_quiz(summary, transcription)
+            quiz_result = get_service("quiz", QuizService).generate_quiz(summary, transcription, difficulty=difficulty)
         except OpenAIServiceError as qe:
             return jsonify({"success": False, "error": str(qe)}), qe.status_code
         except Exception as qe:
@@ -295,7 +364,8 @@ def generate_quiz() -> Any:
             return jsonify({"success": False, "error": f"Quiz evaluation failed: {str(ee)}"}), 502
 
         # 9. Build Structured JSON Response
-        response_data = _build_quiz_response(quiz_result, summary, evaluation_result)
+        response_data = _build_quiz_response(quiz_result, summary, evaluation_result,
+                                             difficulty=difficulty, time_limit_minutes=time_limit_minutes)
 
         # 10. Extract original filename
         stored_filename = Path(video_path).name
@@ -316,6 +386,8 @@ def generate_quiz() -> Any:
             evaluation_score=evaluation_result.score,
             evaluation_feedback=evaluation_result.feedback,
             transcript=transcription,
+            difficulty=difficulty,
+            time_limit_minutes=time_limit_minutes,
         )
 
         response_data["quiz_id"] = quiz_id
@@ -336,6 +408,17 @@ def generate_quiz() -> Any:
         )
         return jsonify(response_data), 200
 
+    except ContentModerationError as cme:
+        logger.warning(
+            f"Content moderation rejection (video, ID={video_id}): {cme.reason}"
+        )
+        return jsonify({
+            "success": False,
+            "error": (
+                f"This content could not be processed: {cme.reason}. "
+                "Please try different content that complies with our content guidelines."
+            ),
+        }), 400
     except Exception as e:
         logger.error(f"Unexpected pipeline failure for video ID {video_id}: {str(e)}", exc_info=True)
         return jsonify({"success": False, "error": f"An unexpected pipeline error occurred: {str(e)}"}), 500
@@ -379,6 +462,10 @@ def generate_quiz_from_pdf() -> Any:
 
     filename: str = file.filename.strip()
 
+    # Parse optional quiz options from form data
+    difficulty = _validate_difficulty(request.form.get("difficulty"))
+    time_limit_minutes = _validate_time_limit(request.form.get("time_limit_minutes"))
+
     # Validate extension
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     if ext != "pdf":
@@ -413,6 +500,17 @@ def generate_quiz_from_pdf() -> Any:
             logger.error(f"PDF IO error: {ioe}", exc_info=True)
             return jsonify({"success": False, "error": str(ioe)}), 400
 
+        # 1b. Moderation check — AFTER PDF extraction, BEFORE summary/quiz
+        try:
+            is_safe, mod_reason = get_service("moderation", ModerationService).check_content(
+                pdf_text, source_type="pdf"
+            )
+        except Exception as me:
+            logger.error(f"Moderation service call failed (pdf): {str(me)}", exc_info=True)
+            return jsonify({"success": False, "error": f"Content moderation check failed: {str(me)}"}), 502
+        if not is_safe:
+            raise ContentModerationError(mod_reason)
+
         # 2. Generate Summary
         try:
             summary = get_service("summary", SummaryService).generate_summary(pdf_text)
@@ -424,7 +522,7 @@ def generate_quiz_from_pdf() -> Any:
 
         # 3. Generate Quiz
         try:
-            quiz_result = get_service("quiz", QuizService).generate_quiz(summary, pdf_text)
+            quiz_result = get_service("quiz", QuizService).generate_quiz(summary, pdf_text, difficulty=difficulty)
         except OpenAIServiceError as qe:
             return jsonify({"success": False, "error": str(qe)}), qe.status_code
         except Exception as qe:
@@ -443,7 +541,8 @@ def generate_quiz_from_pdf() -> Any:
             return jsonify({"success": False, "error": f"Quiz evaluation failed: {ee}"}), 502
 
         # 5. Build Response
-        response_data = _build_quiz_response(quiz_result, summary, evaluation_result)
+        response_data = _build_quiz_response(quiz_result, summary, evaluation_result,
+                                             difficulty=difficulty, time_limit_minutes=time_limit_minutes)
 
         # 6. Persist to PostgreSQL via SQLAlchemy
         quiz_id = _persist_quiz_to_db(
@@ -457,6 +556,8 @@ def generate_quiz_from_pdf() -> Any:
             evaluation_score=evaluation_result.score,
             evaluation_feedback=evaluation_result.feedback,
             transcript=pdf_text,
+            difficulty=difficulty,
+            time_limit_minutes=time_limit_minutes,
         )
 
         response_data["quiz_id"] = quiz_id
@@ -472,6 +573,17 @@ def generate_quiz_from_pdf() -> Any:
         )
         return jsonify(response_data), 200
 
+    except ContentModerationError as cme:
+        logger.warning(
+            f"Content moderation rejection (pdf, job_id={job_id}): {cme.reason}"
+        )
+        return jsonify({
+            "success": False,
+            "error": (
+                f"This content could not be processed: {cme.reason}. "
+                "Please try different content that complies with our content guidelines."
+            ),
+        }), 400
     except Exception as e:
         logger.error(f"Unexpected error in PDF quiz pipeline: {e}", exc_info=True)
         return jsonify({"success": False, "error": f"An unexpected error occurred: {e}"}), 500
@@ -509,6 +621,9 @@ def generate_quiz_from_topic() -> Any:
     max_results: int = int(data.get("max_results", 5))
     max_results = max(1, min(max_results, 10))  # clamp to [1, 10]
 
+    difficulty = _validate_difficulty(data.get("difficulty"))
+    time_limit_minutes = _validate_time_limit(data.get("time_limit_minutes"))
+
     job_id = str(uuid.uuid4())
     start_time = time.time()
 
@@ -522,6 +637,17 @@ def generate_quiz_from_topic() -> Any:
             logger.warning(f"Web search rejected: {ve}")
             return jsonify({"success": False, "error": str(ve)}), 400
 
+        # 1b. Moderation check — AFTER web search, BEFORE summary/quiz
+        try:
+            is_safe, mod_reason = get_service("moderation", ModerationService).check_content(
+                search_text, source_type="topic"
+            )
+        except Exception as me:
+            logger.error(f"Moderation service call failed (topic): {str(me)}", exc_info=True)
+            return jsonify({"success": False, "error": f"Content moderation check failed: {str(me)}"}), 502
+        if not is_safe:
+            raise ContentModerationError(mod_reason)
+
         # 2. Generate Summary
         try:
             summary = get_service("summary", SummaryService).generate_summary(search_text)
@@ -533,7 +659,7 @@ def generate_quiz_from_topic() -> Any:
 
         # 3. Generate Quiz
         try:
-            quiz_result = get_service("quiz", QuizService).generate_quiz(summary, search_text)
+            quiz_result = get_service("quiz", QuizService).generate_quiz(summary, search_text, difficulty=difficulty)
         except OpenAIServiceError as qe:
             return jsonify({"success": False, "error": str(qe)}), qe.status_code
         except Exception as qe:
@@ -552,7 +678,8 @@ def generate_quiz_from_topic() -> Any:
             return jsonify({"success": False, "error": f"Quiz evaluation failed: {ee}"}), 502
 
         # 5. Build Response
-        response_data = _build_quiz_response(quiz_result, summary, evaluation_result)
+        response_data = _build_quiz_response(quiz_result, summary, evaluation_result,
+                                             difficulty=difficulty, time_limit_minutes=time_limit_minutes)
 
         # 6. Persist to PostgreSQL via SQLAlchemy
         quiz_id = _persist_quiz_to_db(
@@ -566,6 +693,8 @@ def generate_quiz_from_topic() -> Any:
             evaluation_score=evaluation_result.score,
             evaluation_feedback=evaluation_result.feedback,
             transcript=search_text,
+            difficulty=difficulty,
+            time_limit_minutes=time_limit_minutes,
         )
 
         response_data["quiz_id"] = quiz_id
@@ -581,6 +710,17 @@ def generate_quiz_from_topic() -> Any:
         )
         return jsonify(response_data), 200
 
+    except ContentModerationError as cme:
+        logger.warning(
+            f"Content moderation rejection (topic, job_id={job_id}): {cme.reason}"
+        )
+        return jsonify({
+            "success": False,
+            "error": (
+                f"This content could not be processed: {cme.reason}. "
+                "Please try different content that complies with our content guidelines."
+            ),
+        }), 400
     except Exception as e:
         logger.error(f"Unexpected error in topic quiz pipeline: {e}", exc_info=True)
         return jsonify({"success": False, "error": f"An unexpected error occurred: {e}"}), 500
@@ -613,6 +753,9 @@ def generate_quiz_from_youtube() -> Any:
     if not youtube_url:
         logger.warning("Generate quiz from youtube failed: Empty youtube_url")
         return jsonify({"success": False, "error": "The 'youtube_url' field is required and cannot be empty."}), 400
+
+    difficulty = _validate_difficulty(data.get("difficulty"))
+    time_limit_minutes = _validate_time_limit(data.get("time_limit_minutes"))
 
     video_id = str(uuid.uuid4())
     logger.info(f"Processing quiz generation from YouTube: {youtube_url} with ID: {video_id}")
@@ -652,6 +795,17 @@ def generate_quiz_from_youtube() -> Any:
             logger.error(f"Whisper transcription failed: {str(we)}")
             return jsonify({"success": False, "error": f"Whisper transcription failed: {str(we)}"}), 502
 
+        # 4b. Moderation check — AFTER transcription, BEFORE summary/quiz
+        try:
+            is_safe, mod_reason = get_service("moderation", ModerationService).check_content(
+                transcription, source_type="youtube"
+            )
+        except Exception as me:
+            logger.error(f"Moderation service call failed (youtube): {str(me)}", exc_info=True)
+            return jsonify({"success": False, "error": f"Content moderation check failed: {str(me)}"}), 502
+        if not is_safe:
+            raise ContentModerationError(mod_reason)
+
         # 5. Generate Summary
         try:
             summary = get_service("summary", SummaryService).generate_summary(transcription)
@@ -663,7 +817,7 @@ def generate_quiz_from_youtube() -> Any:
 
         # 6. Generate Quiz
         try:
-            quiz_result = get_service("quiz", QuizService).generate_quiz(summary, transcription)
+            quiz_result = get_service("quiz", QuizService).generate_quiz(summary, transcription, difficulty=difficulty)
         except OpenAIServiceError as qe:
             return jsonify({"success": False, "error": str(qe)}), qe.status_code
         except Exception as qe:
@@ -682,7 +836,8 @@ def generate_quiz_from_youtube() -> Any:
             return jsonify({"success": False, "error": f"Quiz evaluation failed: {str(ee)}"}), 502
 
         # 8. Build Structured JSON Response
-        response_data = _build_quiz_response(quiz_result, summary, evaluation_result)
+        response_data = _build_quiz_response(quiz_result, summary, evaluation_result,
+                                             difficulty=difficulty, time_limit_minutes=time_limit_minutes)
 
         # 9. Persist to PostgreSQL via SQLAlchemy
         quiz_id = _persist_quiz_to_db(
@@ -696,6 +851,8 @@ def generate_quiz_from_youtube() -> Any:
             evaluation_score=evaluation_result.score,
             evaluation_feedback=evaluation_result.feedback,
             transcript=transcription,
+            difficulty=difficulty,
+            time_limit_minutes=time_limit_minutes,
         )
 
         response_data["quiz_id"] = quiz_id
@@ -716,6 +873,17 @@ def generate_quiz_from_youtube() -> Any:
         )
         return jsonify(response_data), 200
 
+    except ContentModerationError as cme:
+        logger.warning(
+            f"Content moderation rejection (youtube, ID={video_id}): {cme.reason}"
+        )
+        return jsonify({
+            "success": False,
+            "error": (
+                f"This content could not be processed: {cme.reason}. "
+                "Please try different content that complies with our content guidelines."
+            ),
+        }), 400
     except Exception as e:
         logger.error(f"Unexpected pipeline failure for YouTube URL {youtube_url}: {str(e)}", exc_info=True)
         return jsonify({"success": False, "error": f"An unexpected pipeline error occurred: {str(e)}"}), 500
@@ -812,6 +980,8 @@ def get_quiz(id: str) -> Tuple[Response, int]:
                 "score": quiz.evaluation_score,
                 "feedback": quiz.evaluation_feedback,
             },
+            "difficulty": quiz.difficulty or "Intermediate",
+            "time_limit_minutes": quiz.time_limit_minutes,
         }), 200
 
     except Exception as e:

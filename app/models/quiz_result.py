@@ -14,6 +14,8 @@ class QuizResult(db.Model):
     evaluation_score = db.Column(db.Float, nullable=True)
     evaluation_feedback = db.Column(db.Text, nullable=True)
     transcript = db.Column(db.Text, nullable=True)
+    difficulty = db.Column(db.String(50), nullable=True, default="Intermediate")
+    time_limit_minutes = db.Column(db.Integer, nullable=True, default=None)
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now(), nullable=False)
 
     # Relationships
